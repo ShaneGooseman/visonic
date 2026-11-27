@@ -73,6 +73,20 @@ async def async_setup_entry(
 class VisonicSensor(SensorEntity):
     """Representation of a Visonic alarm control panel as a simple sensor for minimal."""
 
+    _unrecorded_attributes = frozenset(
+        {
+            "Panel Model",
+            "Watchdog Timeout (Total)",
+            "Watchdog Timeout (Past 24 Hours)",
+            "Download Timeout",
+            "Download Message Retries",
+            "Disconnection Count",
+            "Client Version",
+            "Protocol Version",
+            "Power Master",
+        }
+    )
+
     def __init__(self, hass: HomeAssistant, client: VisonicClient, partition : int = None):
         """Initialize a Visonic security alarm."""
         self._client = client

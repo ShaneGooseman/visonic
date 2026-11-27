@@ -76,6 +76,19 @@ async def async_setup_entry(
 class VisonicBinarySensor(BinarySensorEntity):
     """Representation of a Visonic Sensor."""
 
+    _unrecorded_attributes = frozenset(
+        {
+            "last_tripped_time",
+            "zone_type",
+            "zone_chime",
+            "sensor_type",
+            "model_type",
+            "raw_sensor_identifier",
+            "partition",
+            "zone_enrolled",
+        }
+    )
+
     def __init__(self, hass, client: VisonicClient, sensor: AlSensorDevice, entry: VisonicConfigEntry):
         """Initialize the sensor."""
         #_LOGGER.debug("[VisonicBinarySensor]   In binary sensor VisonicSensor initialisation")

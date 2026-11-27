@@ -214,26 +214,20 @@ for v in pmLogPower:
 
 def findClient(hass, panel : int) -> VisonicClient | None:
     """Look through all the configuration entries looking for the panel."""
-    data = hass.data[VisonicConfigKey]
-    for entry_id in data:
-        # Cycle through the entry IDs. Get the VisonicConfigData Entry
-        e = hass.data[VisonicConfigKey][entry_id]
-        if e.client is not None:
-            if panel == e.client.getPanelID():
-                #_LOGGER.info(f"findClient success, found client and panel")
-                return e.client
+    for entry in hass.config_entries.async_entries(DOMAIN):
+        runtime_data = getattr(entry, "runtime_data", None)
+        if runtime_data is not None and runtime_data.client is not None:
+            if panel == runtime_data.client.getPanelID():
+                return runtime_data.client
     return None
 
 def findEntry(hass, panel : int):
     """Look through all the configuration entries looking for the entry ID."""
-    data = hass.data[VisonicConfigKey]
-    for entry_id in data:
-        # Cycle through the entry IDs. Get the VisonicConfigData Entry
-        e = hass.data[VisonicConfigKey][entry_id]
-        if e.client is not None:
-            if panel == e.client.getPanelID():
-                #_LOGGER.info(f"findClient success, found client and panel")
-                return entry_id
+    for entry in hass.config_entries.async_entries(DOMAIN):
+        runtime_data = getattr(entry, "runtime_data", None)
+        if runtime_data is not None and runtime_data.client is not None:
+            if panel == runtime_data.client.getPanelID():
+                return entry.entry_id
     return None
 
 async def combineSettings(entry):
@@ -466,7 +460,6 @@ async def async_setup(hass: HomeAssistant, base_config: dict):
  
 
     _LOGGER.info("Starting Visonic Component")
-    hass.data[VisonicConfigKey] = {}
 
     # Install the 7 handlers for the HA service calls
     hass.services.async_register(
@@ -593,17 +586,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: VisonicConfigEntry) -> b
     # When here, panel_id should be unique in the panels configured so far.
     _LOGGER.debug(f"[Visonic Setup]       Panel Ident {panel_id}")
 
-    # push the merged data back in to HA and update the title
-    hass.config_entries.async_update_entry(entry, title=f"Panel {panel_id}", options=conf)
+    # Only assign default title if the user has not customized it
+    if entry.title in ("", "Alarm Panel"):
+        hass.config_entries.async_update_entry(entry, title=f"Panel {panel_id}")
 
     client = None
+    platforms_forwarded = False
     # create client and connect to the panel
     try:
         # create the client ready to connect to the panel, this will initialse the client but nothing more
         client = VisonicClient(hass, panel_id, conf, entry)
 
-        # save the client and its task
-        hass.data.setdefault(VisonicConfigKey, {})[entry.entry_id] = entry.runtime_data = VisonicConfigData(client, None, list(), dict())
+        # Store runtime data exclusively on the ConfigEntry
+        entry.runtime_data = VisonicConfigData(client)
+
+        # Forward platform setups strictly within async_setup_entry so dispatchers are active before connecting
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+        platforms_forwarded = True
 
         totalAttempts = int(conf.get(CONF_RETRY_CONNECTION_COUNT, 0))
 
@@ -613,8 +612,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: VisonicConfigEntry) -> b
             #  setting this to 0 means no retries or reconnections
             if await client.async_connect(force=True):    # total attempts will be 0 so force a single connection for initial creation, and then 0 reconnections
 
-                #_LOGGER.debug(f"[Visonic Setup] Setting client ID for entry id {entry.entry_id}")
-
                 # add update listener to unload.  The update listener is used when the user edits an existing configuration.
                 entry.async_on_unload(entry.add_update_listener(update_listener))
 
@@ -622,6 +619,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: VisonicConfigEntry) -> b
                 # return true to indicate success
                 return True
             else:
+                client.killMyDispatchers(entry)
+                await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+                platforms_forwarded = False
                 client = None
         else:
             # add update listener to unload.  The update listener is used when the user edits an existing configuration.
@@ -636,12 +636,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: VisonicConfigEntry) -> b
             return True
 
     except requests.exceptions.ConnectionError as error:
+        if platforms_forwarded:
+            if client is not None:
+                client.killMyDispatchers(entry)
+            await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
         _LOGGER.error("[Visonic Setup] Visonic Panel could not be reached: [%s]", error)
         raise ConfigEntryNotReady
-
-    if entry.entry_id in hass.data[VisonicConfigKey]:
-        hass.data[VisonicConfigKey].pop(entry.entry_id)
-        _LOGGER.debug(f"[Visonic Setup]     wiped {entry.entry_id}")
 
     _LOGGER.debug(f"[Visonic Setup] Returning False for entry id {entry.entry_id}")
     return False
@@ -730,15 +730,14 @@ async def async_unload_entry(hass: HomeAssistant, entry: VisonicConfigEntry):
 
     unload_ok = True
     p = "unknown"
-    data = entry.runtime_data
-    if data.client is not None:
+    data = getattr(entry, "runtime_data", None)
+    if data is not None and data.client is not None:
         p = data.client.getPanelID()
-        # stop all activity in the client
-        unload_ok = await data.client.async_panel_stop()
-        if entry.entry_id in hass.data[VisonicConfigKey]:
-            hass.data[VisonicConfigKey].pop(entry.entry_id)
-        else:
-            _LOGGER.debug(f"************* Panel {p} nothing to pop config key entry **********************")
+        # stop all activity in the client (comms, protocol, coordinators)
+        await data.client.async_panel_stop(killRestart=True)
+        # unload platforms strictly within async_unload_entry
+        unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+        data.client.killMyDispatchers(entry)
     else:
         unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
         _LOGGER.debug("************* terminate connection fail, no client **************")

@@ -2359,26 +2359,16 @@ class VisonicClient:
                     else:
                         self.logstate_debug(f"........... async_panel_stop, self.myPanelEventCoordinator of unknown type {type(self.myPanelEventCoordinator)}")
 
-                # check to see if an Alarm Panel Entity has been loaded in to HA
-                d = self.entry.runtime_data.dispatchers.get(Platform.ALARM_CONTROL_PANEL, None)
-                if d is None:
-                    self.logstate_debug(f"........... async_panel_stop, not unloading platforms as none loaded")
-                    success = True
-                else:
-                    self.logstate_debug(f"........... async_panel_stop, unloading platforms")
-                    success = await self.hass.config_entries.async_unload_platforms(self.entry, PLATFORMS)
-
                 # Shutdown the protocol handler and any tasks it uses
                 if self.visonicProtocol is not None:
                     self.logstate_debug(f"........... Shutting down Visonic Protocol Handler")
                     self.visonicProtocol.shutdownOperation()
-                
-                self.logstate_debug(f"........... Killing Dispatchers")
-                self.killMyDispatchers(self.entry)
-            
+
             # Reset all variables, include setting self.SystemStarted to False and self.visonicProtocol to None
             self.logstate_debug(f"........... Initialising Client Variables to default to prevent any further interaction")
             self._initialise()
+            # Notify existing entities so they transition cleanly to unavailable while disconnected
+            self._fire_on_change_handlers()
         except Exception as ex:
             # Do not cause a full Home Assistant Exception, keep it local here
             self.logstate_warning(f"........... async_panel_stop, caused exception {ex}")
@@ -2444,12 +2434,13 @@ class VisonicClient:
                         # Connection to the panel has been initially successful
                         self.logstate_debug("........... connection made")
 
-                        if self.DisableAllCommands:
-                            self.logstate_debug("Creating Main Sensor Entity to report state for Alarm indications")
-                            await self._setupVisonicEntity(SENSOR_DOMAIN, True)
-                        else:
-                            self.logstate_debug("Creating Main Alarm Panel Entity to report state")
-                            await self._setupVisonicEntity(ALARM_PANEL_DOMAIN, True)
+                        if self.entry.runtime_data.alarm_entity is None:
+                            if self.DisableAllCommands:
+                                self.logstate_debug("Creating Main Sensor Entity to report state for Alarm indications")
+                                await self._setupVisonicEntity(SENSOR_DOMAIN, True)
+                            else:
+                                self.logstate_debug("Creating Main Alarm Panel Entity to report state")
+                                await self._setupVisonicEntity(ALARM_PANEL_DOMAIN, True)
                         
                         self._fireHAEvent(event_id = PanelCondition.CONNECTION, datadictionary = {"state": "connected", "attempt": attemptCounter + 1})
                         return True
@@ -2458,9 +2449,13 @@ class VisonicClient:
                     attemptCounter += 1
                     force = False
                     if attemptCounter < self.totalAttempts:
-                        self.logstate_debug(f"........... connection attempt delay {self.delayBetweenAttempts} seconds")
+                        import random
+                        base_delay = max(5.0, float(self.delayBetweenAttempts))
+                        backoff_delay = min(base_delay * (2 ** min(attemptCounter - 1, 4)), 600.0)
+                        jittered_delay = max(1, int(round(backoff_delay * random.uniform(0.85, 1.15))))
+                        self.logstate_debug(f"........... connection attempt delay {jittered_delay} seconds (attempt {attemptCounter})")
                         try:
-                            for i in range(int(self.delayBetweenAttempts)):
+                            for i in range(jittered_delay):
                                 await asyncio.sleep(1.0)
                                 if self.visonicProtocol is None:
                                     # The connection has been stopped
@@ -2508,10 +2503,6 @@ class VisonicClient:
                 #    self.logstate_debug(f"[async_connect] Client connecting.....      Trapped ValueError Setups")  # do nothing!
                 #    return False
 
-                self.logstate_debug(f"[async_connect] Client connecting.....      async_forward_entry_setups")
-                await self.hass.config_entries.async_forward_entry_setups(self.entry, PLATFORMS)
-                self.logstate_debug(f"[async_connect] Client connecting.....      async_forward_entry_setups done")
-
                 self.visonicProtocol = VisonicProtocol(panelConfig=self.getConfigData(), panel_id=self.panelident, loop=self.hass.loop)
 
                 self.logstate_debug("Client connecting.....")
@@ -2533,29 +2524,15 @@ class VisonicClient:
                         )
                         # Record that we have started the system
                         self.SystemStarted = True
+                        self._fire_on_change_handlers()
                         return True
-
-                #integration = loader.async_get_loaded_integration(self.hass, DOMAIN)
-                #self.logstate_debug(f"Client not connecting.....   platforms_are_loaded = {integration.platforms_are_loaded(PLATFORMS)}")
-                
-                # The platforms do not initially exist, but after a reload they already exist
-                #platforms = ep.async_get_platforms(self.hass, DOMAIN)
-                #self.logstate_debug(f"Client not connecting.....         platforms {platforms}")
-                #fred = loader.async_get_issue_integration(self.hass, DOMAIN)
-                #self.logstate_debug(f"Client async_get_issue_integration .....         fred is {fred}")
 
                 if self.visonicProtocol is not None:
                     self.visonicProtocol.shutdownOperation()
-                    self.killMyDispatchers(self.entry)
                     self._initialise()
+                    self._fire_on_change_handlers()
                 else:
                     self.logstate_debug(f"........... connection unsuccessful, assume that integration has been unloaded by user (and therefore async_panel_stop has been called)")
-                #with contextlib.suppress(ValueError):
-                unload_ok = await self.hass.config_entries.async_unload_platforms(self.entry, PLATFORMS)
-                if unload_ok:
-                    self.logstate_debug(f"************* platforms unloaded ***************")
-                else:
-                    self.logstate_debug(f"************* platforms not unloaded ***********")
                     
             except (ConnectTimeout, HTTPError) as ex:
                 self.createNotification(
