@@ -118,6 +118,22 @@ class TestMarketplaceReadiness(unittest.TestCase):
             w, h = struct.unpack(">II", raw[16:24])
             self.assertEqual((w, h), dims, f"{filename} dimensions mismatch: {(w, h)} != {dims}")
 
+    def test_spanish_translation_matches_english_key_structure(self) -> None:
+        import json
+
+        def collect_key_paths(obj: object, prefix: str = "") -> set[str]:
+            paths: set[str] = set()
+            if isinstance(obj, dict):
+                for key, value in obj.items():
+                    full = f"{prefix}.{key}" if prefix else key
+                    paths.add(full)
+                    paths.update(collect_key_paths(value, full))
+            return paths
+
+        en_data = json.loads((VISONIC_DIR / "translations" / "en.json").read_text(encoding="utf-8"))
+        es_data = json.loads((VISONIC_DIR / "translations" / "es.json").read_text(encoding="utf-8"))
+        self.assertEqual(collect_key_paths(en_data), collect_key_paths(es_data))
+
 
 if __name__ == "__main__":
     unittest.main()

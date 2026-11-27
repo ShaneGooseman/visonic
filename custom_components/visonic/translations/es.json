@@ -1,0 +1,1087 @@
+{
+    "title": "Panel de Alarma Visonic",
+    "config": {
+        "abort": {
+            "already_configured": "La conexión con el panel de alarma ya está configurada",
+            "device_error": "El dispositivo debe ser Ethernet o USB",
+            "emulation_mode_error": "Configuración de modo de emulación incorrecta",
+            "settings_missing": "Configuración importada desde YAML pero faltan ajustes esenciales",
+            "editing": "Gracias por tus cambios",
+            "cannot_connect_refused": "Conexión rechazada. ¿Está activo el servidor Stream Server de ESPHome o el proxy?"
+        },
+        "error": {
+            "eth_or_usb": "Debe ser Ethernet o USB",
+            "emulation_mode_error": "Configuración de modo de emulación incorrecta",
+            "unknown": "Error inesperado",
+            "cannot_connect_timeout": "Tiempo de espera agotado. Asegúrate de que el dispositivo esté en línea.",
+            "cannot_connect_refused": "Conexión rechazada. ¿Está activo el servidor Stream Server de ESPHome o el proxy?"
+        },
+        "step": {
+            "device": {
+                "description": "Introduce el tipo de dispositivo y el número de panel",
+                "title": "Conexión",
+                "data": {
+                    "type": "Ethernet o USB",
+                    "panel_number": "Número de panel (si solo tienes 1 panel, déjalo en 0)"
+                }
+            },
+            "myethernet": {
+                "description": "Introduce los ajustes de Ethernet",
+                "title": "Configuración Ethernet",
+                "data": {
+                    "host": "Dirección del host",
+                    "port": "Puerto",
+                    "esphome_entity_select": "Entidad de baudios ESPHome (solo PowerMaster)"
+                }
+            },
+            "myusb": {
+                "description": "Introduce los ajustes de USB",
+                "title": "Configuración USB",
+                "data": {
+                    "path": "Ruta local del dispositivo USB",
+                    "baud": "Velocidad en baudios"
+                }
+            },
+            "reconfigure": {
+                "description": "Actualiza los ajustes de conexión de tu panel Visonic",
+                "title": "Reconfigurar conexión Visonic",
+                "data": {
+                    "host": "Dirección del host",
+                    "port": "Puerto",
+                    "esphome_entity_select": "Entidad de baudios ESPHome (solo PowerMaster)",
+                    "path": "Ruta local del dispositivo USB",
+                    "baud": "Velocidad en baudios"
+                }
+            },
+            "zeroconf_confirm": {
+                "description": "¿Deseas añadir el panel Visonic ({name}) a Home Assistant? Se añadirá con las opciones de uso completo en modo de emulación Powerlink.",
+                "title": "Panel Visonic descubierto"
+            },
+            "parameters1": {
+                "description": "",
+                "title": "Ajustes del panel de alarma",
+                "data": {
+                    "exclude_x10": "Dispositivos X10 a excluir (separados por comas, ej. 2,4,5,6)",
+                    "exclude_sensor": "Sensores a excluir (separados por comas, ej. 2,3,4,5)",
+                    "emulation_mode": "Modo de emulación",
+                    "download_code": "Código de descarga EPROM",
+                    "show_eeprom_attributes": "Mostrar datos EPROM en los atributos de la alarma (si se descargan)"
+                }
+            },
+            "parameters10": {
+                "description": "",
+                "title": "Ajustes del panel de alarma",
+                "data": {
+                    "siren_sounding": "Lista de disparadores de la sirena",
+                    "panel_state_notifications": "Lista de disparadores para notificaciones de Home Assistant",
+                    "retry_connection_count": "Número de intentos de reconexión",
+                    "retry_connection_delay": "Tiempo de espera (segundos) entre intentos de reconexión"
+                }
+            },
+            "parameters11": {
+                "description": "",
+                "title": "Ajustes de zonas y sensores del panel",
+                "data": {
+                    "show_eeprom_attributes": "Mostrar datos EPROM en los atributos de la alarma",
+                    "motion_off_delay": "Retardo de desactivación de movimiento/cámara (segundos)",
+                    "magnet_closed_delay": "Retardo de cierre de contacto magnético/cableado (segundos)",
+                    "emergency_off_delay": "Retardo de desactivación de humo/incendio (segundos)"
+                }
+            },
+            "parameters12": {
+                "description": "",
+                "title": "Ajustes de armado y desarmado del panel",
+                "data": {
+                    "arm_without_usercode": "Armar sin código de usuario (no compatible con todos los paneles)",
+                    "force_numeric_keypad": "Forzar el uso del teclado numérico",
+                    "arm_home_enabled": "Habilitar armado en casa",
+                    "arm_night_enabled": "Habilitar armado nocturno",
+                    "arm_away_instant": "Armado ausente realiza un armado ausente instantáneo",
+                    "arm_home_instant": "Armado en casa realiza un armado en casa instantáneo",
+                    "allow_remote_arm": "Permitir armar el panel desde Home Assistant",
+                    "allow_remote_disarm": "Permitir desarmar el panel desde Home Assistant",
+                    "allow_sensor_bypass": "Permitir anular (bypass) cada sensor"
+                }
+            },
+            "parameters13": {
+                "description": "",
+                "title": "Ajustes del registro de eventos del panel",
+                "data": {
+                    "panellog_complete_event": "Generar un evento en HA al completar la descarga",
+                    "panellog_logentry_event": "Generar un evento en HA por cada entrada del registro",
+                    "panellog_csv_add_title_row": "Añadir fila de encabezado al archivo CSV generado",
+                    "panellog_xml_filename": "Nombre de archivo XML (y ruta relativa en /config)",
+                    "panellog_csv_filename": "Nombre de archivo CSV (y ruta relativa en /config)",
+                    "panellog_reverse_order": "Invertir el orden de salida",
+                    "panellog_max_entries": "Exportar solo las X entradas más recientes"
+                }
+            }
+        }
+    },
+    "options": {
+        "abort": {
+            "already_configured": "La conexión con el panel de alarma ya está configurada",
+            "emulation_mode_error": "Configuración de modo de emulación incorrecta",
+            "device_error": "El dispositivo debe ser Ethernet o USB",
+            "editing": "Gracias por tus cambios"
+        },
+        "error": {
+            "eth_or_usb": "Debe ser Ethernet o USB",
+            "emulation_mode_error": "Configuración de modo de emulación incorrecta",
+            "unknown": "Error inesperado"
+        },
+        "step": {
+            "parameters10": {
+                "description": "",
+                "title": "Ajustes del panel de alarma",
+                "data": {
+                    "siren_sounding": "Lista de disparadores de la sirena",
+                    "panel_state_notifications": "Lista de disparadores para notificaciones de Home Assistant",
+                    "retry_connection_count": "Número de intentos de reconexión",
+                    "retry_connection_delay": "Tiempo de espera (segundos) entre intentos de reconexión"
+                }
+            },
+            "parameters11": {
+                "description": "",
+                "title": "Ajustes de zonas y sensores del panel",
+                "data": {
+                    "show_eeprom_attributes": "Mostrar datos EPROM en los atributos de la alarma",
+                    "motion_off_delay": "Retardo de desactivación de movimiento/cámara (segundos)",
+                    "magnet_closed_delay": "Retardo de cierre de contacto magnético/cableado (segundos)",
+                    "emergency_off_delay": "Retardo de desactivación de humo/incendio (segundos)"
+                }
+            },
+            "parameters12": {
+                "description": "",
+                "title": "Ajustes de armado y desarmado del panel",
+                "data": {
+                    "arm_without_usercode": "Armar sin código de usuario (no compatible con todos los paneles)",
+                    "force_numeric_keypad": "Forzar el uso del teclado numérico",
+                    "arm_home_enabled": "Habilitar armado en casa",
+                    "arm_night_enabled": "Habilitar armado nocturno",
+                    "arm_away_instant": "Armado ausente realiza un armado ausente instantáneo",
+                    "arm_home_instant": "Armado en casa realiza un armado en casa instantáneo",
+                    "allow_remote_arm": "Permitir armar el panel desde Home Assistant",
+                    "allow_remote_disarm": "Permitir desarmar el panel desde Home Assistant",
+                    "allow_sensor_bypass": "Permitir anular (bypass) cada sensor"
+                }
+            },
+            "parameters13": {
+                "description": "",
+                "title": "Ajustes del registro de eventos del panel",
+                "data": {
+                    "panellog_complete_event": "Generar un evento en HA al completar la descarga",
+                    "panellog_logentry_event": "Generar un evento en HA por cada entrada del registro",
+                    "panellog_csv_add_title_row": "Añadir fila de encabezado al archivo CSV generado",
+                    "panellog_xml_filename": "Nombre de archivo XML (y ruta relativa en /config)",
+                    "panellog_csv_filename": "Nombre de archivo CSV (y ruta relativa en /config)",
+                    "panellog_reverse_order": "Invertir el orden de salida",
+                    "panellog_max_entries": "Exportar solo las X entradas más recientes"
+                }
+            }
+        }
+    },
+    "device_automation": {
+        "action_type": {
+            "arm_away": "Armar {entity_name} en modo ausente",
+            "arm_home": "Armar {entity_name} en modo en casa",
+            "arm_night": "Armar {entity_name} en modo noche",
+            "arm_vacation": "Armar {entity_name} en modo vacaciones",
+            "disarm": "Desarmar {entity_name}",
+            "trigger": "Disparar {entity_name}"
+        },
+        "condition_type": {
+            "is_triggered": "{entity_name} está disparada",
+            "is_disarmed": "{entity_name} está desarmada",
+            "is_armed_home": "{entity_name} está armada en casa",
+            "is_armed_away": "{entity_name} está armada en modo ausente",
+            "is_armed_night": "{entity_name} está armada en modo noche",
+            "is_armed_vacation": "{entity_name} está armada en modo vacaciones"
+        },
+        "extra_fields": {
+            "code": "Código",
+            "for": "[%key:common::device_automation::extra_fields::for%]"
+        },
+        "trigger_type": {
+            "triggered": "{entity_name} disparada",
+            "disarmed": "{entity_name} desarmada",
+            "armed_home": "{entity_name} armada en casa",
+            "armed_away": "{entity_name} armada en modo ausente",
+            "armed_night": "{entity_name} armada en modo noche",
+            "armed_vacation": "{entity_name} armada en modo vacaciones"
+        }
+    },
+    "services": {
+        "alarm_panel_eventlog": {
+            "name": "Obtener registro de eventos",
+            "description": "Obtiene el registro de eventos del panel de alarma.",
+            "fields": {
+                "entity_id": {
+                    "name": "Panel Visonic",
+                    "description": "Nombre (Entity ID) del panel Visonic."
+                },
+                "code": {
+                    "name": "Código de usuario",
+                    "description": "Código de usuario opcional (según tu configuración) para enviar al panel."
+                }
+            }
+        },
+        "alarm_panel_command": {
+            "name": "Enviar comando",
+            "description": "Envía un comando al panel de alarma.",
+            "fields": {
+                "entity_id": {
+                    "name": "Panel Visonic",
+                    "description": "Nombre (Entity ID) del panel Visonic."
+                },
+                "command": {
+                    "name": "Comando del panel",
+                    "description": "Comando a enviar al panel ('Arm Away', 'Arm Away Instant', 'Arm Home', 'Arm Home Instant', 'Disarm', 'Trigger', 'Mute', 'Emergency', 'Panic', 'Fire')."
+                },
+                "code": {
+                    "name": "Código de usuario",
+                    "description": "Código de usuario opcional (según tu configuración) para enviar al panel."
+                }
+            }
+        },
+        "alarm_panel_x10": {
+            "name": "Comando X10",
+            "description": "Envía un comando X10 a un dispositivo X10.",
+            "fields": {
+                "entity_id": {
+                    "name": "Interruptor X10 Visonic",
+                    "description": "Nombre del interruptor X10 Visonic. Distingue mayúsculas/minúsculas y es obligatorio. El prefijo 'switch.' es opcional."
+                },
+                "x10command": {
+                    "name": "Comando X10",
+                    "description": "Comando X10: Off, On, Dimmer, Brighten."
+                }
+            }
+        },
+        "alarm_panel_reconnect": {
+            "name": "Reconectar panel",
+            "description": "Reconecta con el panel de alarma tras un problema previo.",
+            "fields": {
+                "entity_id": {
+                    "name": "Panel Visonic",
+                    "description": "Nombre (Entity ID) del panel Visonic."
+                }
+            }
+        },
+        "alarm_panel_zoneinfo": {
+            "name": "Información de zonas y X10 del panel",
+            "description": "Obtiene la lista de sensores y dispositivos X10, además de los sensores abiertos, con batería baja o anulados.",
+            "fields": {
+                "entity_id": {
+                    "name": "Panel Visonic",
+                    "description": "Nombre (Entity ID) del panel Visonic."
+                }
+            }
+        },
+        "alarm_sensor_image": {
+            "name": "Obtener imagen del sensor",
+            "description": "Obtiene una imagen del sensor (solo funciona si el sensor es una cámara PIR).",
+            "fields": {
+                "entity_id": {
+                    "name": "Sensor Visonic (Imagen)",
+                    "description": "Nombre del sensor Visonic."
+                }
+            }
+        },
+        "alarm_sensor_bypass": {
+            "name": "Anular (bypass) sensor",
+            "description": "Anula (bypass) o reactiva un sensor Visonic.",
+            "fields": {
+                "entity_id": {
+                    "name": "Sensor Visonic",
+                    "description": "Nombre del sensor Visonic a anular. Distingue mayúsculas/minúsculas y es obligatorio. El prefijo 'binary_sensor.' es opcional."
+                },
+                "bypass": {
+                    "name": "Comando de anulación",
+                    "description": "Indica si anular o reactivar el sensor."
+                },
+                "code": {
+                    "name": "Código de usuario",
+                    "description": "Código de usuario opcional (según tu configuración) para enviar al panel."
+                }
+            }
+        }
+    },
+    "entity": {
+        "switch": {
+            "alarm_panel_key": {
+                "state_attributes": {
+                    "panel": {
+                        "name": "ID de panel"
+                    },
+                    "name": {
+                        "name": "Nombre"
+                    },
+                    "type": {
+                        "name": "Tipo",
+                        "state": {
+                            "dimmer": "Regulador",
+                            "onoff": "Interruptor On/Off"
+                        }
+                    },
+                    "visonic_device": {
+                        "name": "ID de dispositivo de zona"
+                    },
+                    "location": {
+                        "name": "Ubicación",
+                        "state": {
+                            "attic": "Ático / Buhardilla",
+                            "back_door": "Puerta trasera",
+                            "basement": "Sótano",
+                            "bathroom": "Baño",
+                            "bedroom": "Dormitorio",
+                            "child_room": "Habitación infantil",
+                            "conservatory": "Galería / Invernadero",
+                            "play_room": "Sala de juegos",
+                            "dining_room": "Comedor",
+                            "downstairs": "Planta baja",
+                            "emergency": "Emergencia",
+                            "fire": "Incendio",
+                            "front_door": "Puerta principal",
+                            "garage": "Garaje",
+                            "garage_door": "Puerta del garaje",
+                            "guest_room": "Habitación de invitados",
+                            "hall": "Recibidor / Pasillo",
+                            "kitchen": "Cocina",
+                            "laundry_room": "Lavadero",
+                            "living_room": "Salón",
+                            "master_bathroom": "Baño principal",
+                            "master_bedroom": "Dormitorio principal",
+                            "office": "Despacho",
+                            "upstairs": "Planta superior",
+                            "utility_room": "Cuarto de servicio",
+                            "yard": "Patio / Jardín",
+                            "custom_1": "Personalizada 1",
+                            "custom_2": "Personalizada 2",
+                            "custom_3": "Personalizada 3",
+                            "custom_4": "Personalizada 4",
+                            "custom_5": "Personalizada 5",
+                            "not_installed": "No instalada"
+                        }
+                    }
+                }
+            }
+        },
+        "select": {
+            "alarm_panel_key": {
+                "state": {
+                    "armed": "Armado",
+                    "bypass": "Anulado (Bypass)"
+                },
+                "state_attributes": {
+                    "panel": {
+                        "name": "ID de panel"
+                    },
+                    "visonic_device": {
+                        "name": "ID de dispositivo de zona"
+                    }
+                }
+            }
+        },
+        "image": {
+            "alarm_panel_key": {
+                "state_attributes": {
+                    "panel": {
+                        "name": "ID de panel"
+                    },
+                    "visonic_device": {
+                        "name": "ID de dispositivo de zona"
+                    }
+                }
+            }
+        },
+        "sensor": {
+            "alarm_panel_key": {
+                "state_attributes": {
+                    "panel": {
+                        "name": "ID de panel"
+                    },
+                    "emulationmode": {
+                        "name": "Modo de emulación",
+                        "state": {
+                            "unknown": "Desconocido",
+                            "problem": "Problema",
+                            "starting": "Iniciando",
+                            "standard": "Estándar",
+                            "standard_plus": "Estándar Plus",
+                            "powerlink": "Powerlink",
+                            "powerlink_bridged": "Powerlink (Puenteado)",
+                            "download": "Descargando EPROM",
+                            "stopped": "Integración detenida",
+                            "minimal_only": "Conexión mínima del panel"
+                        }
+                    },
+                    "state": {
+                        "name": "Estado del panel",
+                        "state": {
+                            "unknown": "Desconocido",
+                            "disarmed": "Desarmado",
+                            "arming_home": "Armando en casa",
+                            "arming_away": "Armando ausente",
+                            "entry_delay": "Retardo de entrada",
+                            "armed_home": "Armado en casa",
+                            "armed_away": "Armado ausente",
+                            "armed_home_bypass": "Armado en casa (Bypass)",
+                            "armed_away_bypass": "Armado ausente (Bypass)",
+                            "armed_home_instant": "Armado en casa (Instantáneo)",
+                            "armed_away_instant": "Armado ausente (Instantáneo)",
+                            "entry_delay_instant": "Retardo de entrada (Instantáneo)",
+                            "user_test": "Prueba de usuario",
+                            "downloading": "Descargando EPROM",
+                            "installer": "Instalador",
+                            "triggered": "Disparado"
+                        }
+                    },
+                    "ready": {
+                        "name": "Panel listo",
+                        "state": {
+                            "false": "No",
+                            "true": "Sí"
+                        }
+                    },
+                    "tamper": {
+                        "name": "Sabotaje (Tamper) del panel",
+                        "state": {
+                            "false": "No",
+                            "true": "Sí"
+                        }
+                    },
+                    "memory": {
+                        "name": "Alerta en memoria del panel",
+                        "state": {
+                            "false": "No",
+                            "true": "Sí"
+                        }
+                    },
+                    "bypass": {
+                        "name": "Bypass del panel",
+                        "state": {
+                            "false": "No",
+                            "true": "Sí"
+                        }
+                    },
+                    "alarm": {
+                        "name": "Alarma",
+                        "state": {
+                            "none": "Sin alarma",
+                            "intruder": "Intrusión",
+                            "tamper": "Sabotaje (Tamper)",
+                            "panic": "Pánico",
+                            "fire": "Incendio",
+                            "emergency": "Emergencia",
+                            "gas": "Gas",
+                            "flood": "Inundación"
+                        }
+                    },
+                    "trouble": {
+                        "name": "Avería",
+                        "state": {
+                            "none": "Sin averías",
+                            "general": "General",
+                            "communication": "Pérdida de comunicación",
+                            "battery": "Batería",
+                            "power": "Alimentación",
+                            "jamming": "Inhibición RF",
+                            "telephone": "Fallo de línea telefónica"
+                        }
+                    },
+                    "lasteventname": {
+                        "name": "Nombre del último evento"
+                    },
+                    "lasteventaction": {
+                        "name": "Acción del último evento"
+                    },
+                    "lasteventtime": {
+                        "name": "Hora del último evento"
+                    }
+                }
+            }
+        },
+        "binary_sensor": {
+            "alarm_panel_key": {
+                "state_attributes": {
+                    "device_name": {
+                        "name": "Nombre del dispositivo"
+                    },
+                    "zone_name_panel": {
+                        "name": "Nombre de zona (Panel)"
+                    },
+                    "zone_name": {
+                        "name": "Nombre de zona",
+                        "state": {
+                            "attic": "Ático / Buhardilla",
+                            "back_door": "Puerta trasera",
+                            "basement": "Sótano",
+                            "bathroom": "Baño",
+                            "bedroom": "Dormitorio",
+                            "child_room": "Habitación infantil",
+                            "conservatory": "Galería / Invernadero",
+                            "play_room": "Sala de juegos",
+                            "dining_room": "Comedor",
+                            "downstairs": "Planta baja",
+                            "emergency": "Emergencia",
+                            "fire": "Incendio",
+                            "front_door": "Puerta principal",
+                            "garage": "Garaje",
+                            "garage_door": "Puerta del garaje",
+                            "guest_room": "Habitación de invitados",
+                            "hall": "Recibidor / Pasillo",
+                            "kitchen": "Cocina",
+                            "laundry_room": "Lavadero",
+                            "living_room": "Salón",
+                            "master_bathroom": "Baño principal",
+                            "master_bedroom": "Dormitorio principal",
+                            "office": "Despacho",
+                            "upstairs": "Planta superior",
+                            "utility_room": "Cuarto de servicio",
+                            "yard": "Patio / Jardín",
+                            "custom_1": "Personalizada 1",
+                            "custom_2": "Personalizada 2",
+                            "custom_3": "Personalizada 3",
+                            "custom_4": "Personalizada 4",
+                            "custom_5": "Personalizada 5",
+                            "not_installed": "No instalada"
+                        }
+                    },
+                    "zone_type": {
+                        "name": "Tipo de zona",
+                        "state": {
+                            "non-alarm": "Sin alarma",
+                            "emergency": "Emergencia",
+                            "flood": "Inundación",
+                            "gas": "Gas",
+                            "delay_1": "Retardo 1",
+                            "delay_2": "Retardo 2",
+                            "interior_follow": "Interior seguidor",
+                            "perimeter": "Perimetral",
+                            "perimeter_follow": "Perimetral seguidor",
+                            "24_hours_silent": "24 horas silenciosa",
+                            "24_hours_audible": "24 horas sonora",
+                            "fire": "Incendio",
+                            "interior": "Interior",
+                            "home_delay": "Retardo en casa",
+                            "temperature": "Temperatura",
+                            "outdoor": "Exterior",
+                            "undefined": "Sin definir"
+                        }
+                    },
+                    "zone_missing": {
+                        "name": "Zona perdida (Radio)",
+                        "state": {
+                            "false": "No",
+                            "true": "Sí"
+                        }
+                    },
+                    "zone_oneway": {
+                        "name": "Zona unidireccional (Radio)",
+                        "state": {
+                            "false": "No",
+                            "true": "Sí"
+                        }
+                    },
+                    "zone_inactive": {
+                        "name": "Zona inactiva (Radio)",
+                        "state": {
+                            "false": "No",
+                            "true": "Sí"
+                        }
+                    },
+                    "zone_trouble": {
+                        "name": "Problema de zona",
+                        "state": {
+                            "none": "No",
+                            "tamper": "Sabotaje (Tamper)",
+                            "jamming": "Inhibición RF",
+                            "comm_failure": "Fallo de comunicación",
+                            "line_failure": "Fallo de línea",
+                            "fuse": "Problema de fusible",
+                            "not_active": "Sensor inactivo",
+                            "ac_failure": "Fallo de alimentación eléctrica"
+                        }
+                    },
+                    "zone_chime": {
+                        "name": "Aviso acústico (Chime)",
+                        "state": {
+                            "chime_off": "Desactivado",
+                            "melody_chime": "Melodía",
+                            "zone_name_chime": "Nombre de zona"
+                        }
+                    },
+                    "zone_motion_off_time": {
+                        "name": "Tiempo de desactivación de movimiento"
+                    },
+                    "zone_temperature": {
+                        "name": "Temperatura de zona"
+                    },
+                    "zone_lux": {
+                        "name": "Luminosidad de zona"
+                    },
+                    "visonic_device": {
+                        "name": "ID de dispositivo de zona"
+                    },
+                    "battery_level": {
+                        "name": "Nivel de batería"
+                    },
+                    "last_tripped_time": {
+                        "name": "Última activación de zona",
+                        "state": {
+                            "unknown": "Sin activaciones"
+                        }
+                    },
+                    "panel": {
+                        "name": "ID de panel"
+                    },
+                    "device_tamper": {
+                        "name": "Sabotaje del dispositivo",
+                        "state": {
+                            "false": "Correcto",
+                            "true": "Alerta",
+                            "undefined": "Sin definir"
+                        }
+                    },
+                    "device_tripped": {
+                        "name": "Dispositivo activado",
+                        "state": {
+                            "false": "No",
+                            "true": "Sí"
+                        }
+                    },
+                    "device_armed": {
+                        "name": "Dispositivo armado",
+                        "state": {
+                            "false": "No",
+                            "true": "Sí"
+                        }
+                    },
+                    "sensor_type": {
+                        "name": "Tipo de sensor",
+                        "state": {
+                            "magnet": "Contacto magnético",
+                            "motion": "Movimiento PIR",
+                            "camera": "Cámara PIR",
+                            "wired": "Cableado",
+                            "smoke": "Humo",
+                            "flood": "Inundación",
+                            "gas": "Gas",
+                            "vibration": "Vibración",
+                            "shock": "Impacto",
+                            "temperature": "Temperatura",
+                            "sound": "Sonido",
+                            "unknown": "Desconocido"
+                        }
+                    },
+                    "zone_open": {
+                        "name": "Zona abierta",
+                        "state": {
+                            "false": "No",
+                            "true": "Sí"
+                        }
+                    },
+                    "zone_tamper": {
+                        "name": "Sabotaje de zona",
+                        "state": {
+                            "false": "Correcto",
+                            "true": "Alerta",
+                            "undefined": "Sin definir"
+                        }
+                    }
+                }
+            }
+        },
+        "siren": {
+            "alarm_panel_key": {
+                "state_attributes": {
+                    "alarm": {
+                        "name": "Alarma",
+                        "state": {
+                            "none": "Sin alarma",
+                            "intruder": "Intrusión",
+                            "tamper": "Sabotaje (Tamper)",
+                            "panic": "Pánico",
+                            "fire": "Incendio",
+                            "emergency": "Emergencia",
+                            "gas": "Gas",
+                            "flood": "Inundación",
+                            "external": "HomeAssistant"
+                        }
+                    }
+                }
+            }
+        },
+        "alarm_control_panel": {
+            "alarm_panel_key": {
+                "state_attributes": {
+                    "code_format": {
+                        "name": "Formato de código",
+                        "state": {
+                            "text": "Texto",
+                            "number": "Numérico"
+                        }
+                    },
+                    "changed_by": {
+                        "name": "Modificado por"
+                    },
+                    "code_arm_required": {
+                        "name": "Código para armar",
+                        "state": {
+                            "true": "Obligatorio",
+                            "false": "No obligatorio"
+                        }
+                    },
+                    "emulationmode": {
+                        "name": "Modo de emulación",
+                        "state": {
+                            "unknown": "Desconocido",
+                            "problem": "Problema",
+                            "starting": "Iniciando",
+                            "standard": "Estándar",
+                            "standard_plus": "Estándar Plus",
+                            "powerlink": "Powerlink",
+                            "powerlink_bridged": "Powerlink (Puenteado)",
+                            "download": "Descargando EPROM",
+                            "stopped": "Integración detenida",
+                            "minimal_only": "Conexión mínima del panel"
+                        }
+                    },
+                    "state": {
+                        "name": "Estado del panel",
+                        "state": {
+                            "unknown": "Desconocido",
+                            "disarmed": "Desarmado",
+                            "arming_home": "Armando en casa",
+                            "arming_away": "Armando ausente",
+                            "entry_delay": "Retardo de entrada",
+                            "armed_home": "Armado en casa",
+                            "armed_away": "Armado ausente",
+                            "armed_home_bypass": "Armado en casa (Bypass)",
+                            "armed_away_bypass": "Armado ausente (Bypass)",
+                            "armed_home_instant": "Armado en casa (Instantáneo)",
+                            "armed_away_instant": "Armado ausente (Instantáneo)",
+                            "entry_delay_instant": "Retardo de entrada (Instantáneo)",
+                            "user_test": "Prueba de usuario",
+                            "downloading": "Descargando EPROM",
+                            "installer": "Instalador",
+                            "triggered": "Disparado"
+                        }
+                    },
+                    "ready": {
+                        "name": "Panel listo",
+                        "state": {
+                            "false": "No",
+                            "true": "Sí"
+                        }
+                    },
+                    "tamper": {
+                        "name": "Sabotaje (Tamper) del panel",
+                        "state": {
+                            "false": "No",
+                            "true": "Sí"
+                        }
+                    },
+                    "battery_level": {
+                        "name": "Nivel de batería"
+                    },
+                    "memory": {
+                        "name": "Alerta en memoria del panel",
+                        "state": {
+                            "false": "No",
+                            "true": "Sí"
+                        }
+                    },
+                    "bypass": {
+                        "name": "Bypass del panel",
+                        "state": {
+                            "false": "No",
+                            "true": "Sí"
+                        }
+                    },
+                    "alarm": {
+                        "name": "Alarma",
+                        "state": {
+                            "none": "Sin alarma",
+                            "intruder": "Intrusión",
+                            "tamper": "Sabotaje (Tamper)",
+                            "panic": "Pánico",
+                            "fire": "Incendio",
+                            "emergency": "Emergencia",
+                            "gas": "Gas",
+                            "flood": "Inundación"
+                        }
+                    },
+                    "trouble": {
+                        "name": "Avería",
+                        "state": {
+                            "none": "Sin averías",
+                            "general": "General",
+                            "communication": "Pérdida de comunicación",
+                            "battery": "Batería",
+                            "power": "Alimentación",
+                            "jamming": "Inhibición RF",
+                            "telephone": "Fallo de línea telefónica"
+                        }
+                    },
+                    "lasteventname": {
+                        "name": "Nombre del último evento"
+                    },
+                    "lasteventaction": {
+                        "name": "Acción del último evento"
+                    },
+                    "lasteventtime": {
+                        "name": "Hora del último evento"
+                    }
+                }
+            }
+        }
+    },
+    "selector": {
+        "alarm_command": {
+            "options": {
+                "disarm": "Desarmar",
+                "arm_home": "Armar en casa",
+                "arm_home_instant": "Armar en casa (Instantáneo)",
+                "arm_home_bypass": "Armar en casa (Bypass)",
+                "arm_away": "Armar ausente",
+                "arm_away_instant": "Armar ausente (Instantáneo)",
+                "arm_away_bypass": "Armar ausente (Bypass)",
+                "mute": "Silenciar sirena",
+                "trigger": "Disparar sirena",
+                "fire": "Alarma de incendio",
+                "emergency": "Alarma de emergencia",
+                "panic": "Alarma de pánico"
+            }
+        },
+        "bypass_command": {
+            "options": {
+                "off": "Activo",
+                "on": "Anulado (Bypass)"
+            }
+        },
+        "x10command": {
+            "options": {
+                "off": "Apagar",
+                "on": "Encender",
+                "dimmer": "Reducir brillo",
+                "brighten": "Aumentar brillo"
+            }
+        },
+        "siren_sounding": {
+            "options": {
+                "intruder": "Intrusión",
+                "tamper": "Sabotaje (Tamper)",
+                "fire": "Incendio",
+                "emergency": "Emergencia",
+                "gas": "Gas",
+                "flood": "Inundación",
+                "x10": "X10",
+                "panic": "Pánico"
+            }
+        },
+        "panel_state_notifications": {
+            "options": {
+                "siren_sounding": "Sirena sonando",
+                "panel_reset": "Reinicio del sistema del panel",
+                "invalid_pin": "Código rechazado por el panel",
+                "panel_operation": "Operación del panel",
+                "connection_problem": "Problemas de conexión",
+                "bypass_problem": "Problemas de anulación (bypass) de sensores",
+                "image_problem": "Problemas al obtener imágenes",
+                "eventlog_problem": "Problemas con el registro de eventos",
+                "command_not_sent": "Comando no enviado al panel",
+                "x10_problem": "Problema X10"
+            }
+        }
+    },
+    "exceptions": {
+        "no_panel_connection": {
+            "message": "La integración Visonic para {myname} no está conectada al panel."
+        },
+        "invalid_arm_state": {
+            "message": "No válido: no se puede establecer el estado de armado a {option}. Los estados permitidos son: {options}"
+        },
+        "invalid_arm_state_no_option": {
+            "message": "Estado de armado no definido. Los estados permitidos son: {options}"
+        }
+    },
+    "entity_component": {
+        "event_name": {
+            "state": {
+                "startup": "Inicio",
+                "system": "Sistema",
+                "zone": "Zona",
+                "fob": "Mando",
+                "user": "Usuario",
+                "pad": "Teclado",
+                "siren": "Sirena",
+                "2pad": "Teclado bidireccional",
+                "x10": "X10",
+                "pgm": "PGM",
+                "gsm": "GSM",
+                "powerlink": "P-LINK",
+                "ptag": "Etiqueta Prox",
+                "repeater": "Repetidor",
+                "undefined": "Desconocido"
+            }
+        },
+        "event_action": {
+            "state": {
+                "000": "Normal",
+                "001": "Alarma interior",
+                "002": "Alarma perimetral",
+                "003": "Alarma con retardo",
+                "004": "Alarma silenciosa 24h",
+                "005": "Alarma sonora 24h",
+                "006": "Sabotaje (Tamper)",
+                "007": "Sabotaje del panel de control",
+                "008": "Alarma de sabotaje",
+                "009": "Alarma de sabotaje",
+                "010": "Pérdida de comunicación",
+                "011": "Pánico desde mando",
+                "012": "Pánico desde panel de control",
+                "013": "Coacción (Duress)",
+                "014": "Confirmación de alarma",
+                "015": "Avería general",
+                "016": "Restauración de avería general",
+                "017": "Restauración interior",
+                "018": "Restauración perimetral",
+                "019": "Restauración con retardo",
+                "020": "Restauración silenciosa 24h",
+                "021": "Restauración sonora 24h",
+                "022": "Restauración de sabotaje",
+                "023": "Restauración de sabotaje del panel",
+                "024": "Restauración de sabotaje",
+                "025": "Restauración de sabotaje",
+                "026": "Restauración de comunicación",
+                "027": "Restauración general",
+                "028": "Cancelar alarma",
+                "029": "Restauración de avería",
+                "030": "Sin usar",
+                "031": "Cierre reciente",
+                "032": "Incendio",
+                "033": "Restauración de incendio",
+                "034": "No activo",
+                "035": "Emergencia",
+                "036": "Eliminar usuario",
+                "037": "Desarmado con llave/aviso",
+                "038": "Confirmar alarma de emergencia",
+                "039": "Supervisión (Inactivo)",
+                "040": "Restauración de supervisión (Activo)",
+                "041": "Batería baja",
+                "042": "Restauración de batería baja",
+                "043": "Fallo de alimentación CA",
+                "044": "Restauración de alimentación CA",
+                "045": "Batería baja del panel de control",
+                "046": "Restauración de batería del panel de control",
+                "047": "Inhibición RF",
+                "048": "Restauración de inhibición RF",
+                "049": "Fallo de comunicaciones",
+                "050": "Restauración de comunicaciones",
+                "051": "Fallo de línea telefónica",
+                "052": "Restauración de línea telefónica",
+                "053": "Autoprueba",
+                "054": "Fallo de fusible",
+                "055": "Restauración de fusible",
+                "056": "Batería baja del mando",
+                "057": "Restauración de batería del mando",
+                "058": "Reinicio de técnico",
+                "059": "Desconexión de batería",
+                "060": "Batería baja teclado unidireccional",
+                "061": "Restauración batería teclado unidireccional",
+                "062": "Teclado unidireccional inactivo",
+                "063": "Restauración teclado unidireccional activo",
+                "064": "Confirmación de batería baja",
+                "065": "Limpiar sensor",
+                "066": "Avería de incendio",
+                "067": "Batería baja",
+                "068": "Restauración de batería",
+                "069": "Fallo de alimentación CA",
+                "070": "Restauración de alimentación CA",
+                "071": "Supervisión (Inactivo)",
+                "072": "Restauración de supervisión (Activo)",
+                "073": "Alerta de gas",
+                "074": "Restauración de alerta de gas",
+                "075": "Avería de gas",
+                "076": "Restauración de avería de gas",
+                "077": "Alerta de inundación",
+                "078": "Restauración de alerta de inundación",
+                "079": "Avería X-10",
+                "080": "Restauración de avería X-10",
+                "081": "Armado en casa",
+                "082": "Armado ausente",
+                "083": "Armado rápido en casa",
+                "084": "Armado rápido ausente",
+                "085": "Desarmado",
+                "086": "Fallo en autoarmado",
+                "087": "Entrada en modo de prueba",
+                "088": "Salida de modo de prueba",
+                "089": "Armado forzado",
+                "090": "Autoarmado",
+                "091": "Armado instantáneo",
+                "092": "Anulación (Bypass)",
+                "093": "Fallo al armar",
+                "094": "Puerta abierta",
+                "095": "Comunicación establecida por el panel",
+                "096": "Reinicio del sistema",
+                "097": "Programación de instalador",
+                "098": "Contraseña incorrecta",
+                "099": "Evento no de sistema",
+                "100": "Evento no de sistema",
+                "101": "Alerta de calor extremo",
+                "102": "Restauración de alerta de calor extremo",
+                "103": "Alerta de congelación",
+                "104": "Restauración de alerta de congelación",
+                "105": "Alerta de frío",
+                "106": "Restauración de alerta de frío",
+                "107": "Alerta de calor",
+                "108": "Restauración de alerta de calor",
+                "109": "Avería de sensor de temperatura",
+                "110": "Restauración de avería de sensor de temperatura",
+                "111": "Enmascaramiento PIR",
+                "112": "Restauración de enmascaramiento PIR",
+                "113": "Batería baja del repetidor",
+                "114": "Restauración de batería del repetidor",
+                "115": "Repetidor inactivo",
+                "116": "Restauración de repetidor inactivo",
+                "117": "Sabotaje del repetidor",
+                "118": "Restauración de sabotaje del repetidor",
+                "119": "Fin de prueba de sirena",
+                "120": "Fin de prueba de dispositivos",
+                "121": "Avería de comunicación unidireccional",
+                "122": "Restauración de comunicación unidireccional",
+                "123": "Alarma de sensor exterior",
+                "124": "Restauración de sensor exterior",
+                "125": "Alarma de sensor de vigilancia",
+                "126": "Restauración de sensor de vigilancia",
+                "127": "Cambio de fecha y hora",
+                "128": "Apagado del sistema",
+                "129": "Encendido del sistema",
+                "130": "Recordatorio perdido",
+                "131": "Fallo de prueba de colgante",
+                "132": "Teclado básico inactivo",
+                "133": "Restauración de teclado básico inactivo",
+                "134": "Sabotaje de teclado básico",
+                "135": "Restauración de sabotaje de teclado básico",
+                "136": "Calor",
+                "137": "Restauración de calor",
+                "138": "Avería de calor LE",
+                "139": "Alarma de CO",
+                "140": "Restauración de alarma de CO",
+                "141": "Avería de CO",
+                "142": "Restauración de avería de CO",
+                "143": "Salida de modo instalador",
+                "144": "Entrada en modo instalador",
+                "145": "Avería de autodiagnóstico",
+                "146": "Restauración de autodiagnóstico",
+                "147": "Confirmar evento de pánico",
+                "148": "n/d",
+                "149": "Fallo en prueba de remojo (Soak)",
+                "150": "Fallo en prueba de incendio (Soak)",
+                "151": "Fallo en prueba de gas (Soak)"
+            }
+        }
+    }
+}
