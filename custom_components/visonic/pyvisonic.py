@@ -1017,6 +1017,8 @@ class VisonicListEntry:
 class PriorityQueueWithPeek(asyncio.PriorityQueue):
 
     def peek_nowait(self):
+        if not self._queue:
+            raise asyncio.QueueEmpty
         t = self._queue[0]     # PriorityQueue is an ordered list so look at the head of the list
         return t
 
@@ -4159,6 +4161,9 @@ class PacketHandling(ProtocolBase):
 
     def _handle_msgtype25(self, data):  # Download retry
         """ MsgType=25 - Download retry. Unit is not ready to enter download mode """
+        if len(data) < 3:
+            log.warning(f"[handle_msgtype25] Truncated packet (len={len(data)})")
+            return
         # Format: <MsgType> <?> <?> <delay in sec>
         iDelay = data[2]
         log.debug(f"[handle_msgtype25] Download Retry, have to wait {iDelay} seconds     data is {toString(data)}")
@@ -4187,6 +4192,9 @@ class PacketHandling(ProtocolBase):
             5=PanelType e.g. PowerMax, PowerMaster
             4=Sub model type of the panel - just informational, not used
         """
+        if len(data) < 6:
+            log.warning(f"[handle_msgtype3C] Truncated packet (len={len(data)})")
+            return
         if not self.pmGotPanelDetails:
             self.ModelType = data[4]
             if not self._set_data_from_panel_type(data[5]):
@@ -4272,6 +4280,10 @@ class PacketHandling(ProtocolBase):
         #    fb 03 00 69 3a 01 67 53 00 1c    
         #    fb 04 01 69 3a 01 67 52 61 1b    
 
+        if len(data) < 10:
+            log.warning(f"[handle_msgtypeA0] Truncated packet (len={len(data)})")
+            return
+
         eventNum = data[1]
         # Check for the first entry, it only contains the number of events
         if eventNum == 0x01:
@@ -4315,6 +4327,9 @@ class PacketHandling(ProtocolBase):
 
     def _handle_msgtypeA5(self, data):  # Status Message
         """ MsgType=A5 - Zone Data Update """
+        if len(data) < 10:
+            log.warning(f"[handle_msgtypeA5] Truncated packet (len={len(data)})")
+            return
 
         # msgTot = data[0]
         eventType = data[1]
@@ -4434,6 +4449,9 @@ class PacketHandling(ProtocolBase):
                 self._update_sensor(sensor = offset+i)
 
     def _handle_msgtypeA7(self, data):
+        if len(data) < 7:
+            log.warning(f"[handle_msgtypeA7] Truncated packet (len={len(data)})")
+            return
         # This is a complete cheat as this library should not access this, just for debug
         from . import pmLogEvent_t, pmLogPowerMaxUser_t, pmLogPowerMasterUser_t
         """ MsgType=A7 - Panel Status Change """
@@ -4584,6 +4602,9 @@ class PacketHandling(ProtocolBase):
 
     def _handle_msgtypeAB(self, data) -> bool:  # PowerLink Message
         """ MsgType=AB - Panel Powerlink Messages """
+        if len(data) < 1:
+            log.warning(f"[handle_msgtypeAB] Truncated packet (len={len(data)})")
+            return False
         log.debug(f"[handle_msgtypeAB]  data {toString(data)}")
 
         # Restart the timer
@@ -4591,6 +4612,9 @@ class PacketHandling(ProtocolBase):
 
         subType = data[0]
         if subType == 1 and self.PanelMode in [AlPanelMode.POWERLINK, AlPanelMode.STANDARD_PLUS]:
+            if len(data) < 8:
+                log.warning(f"[handle_msgtypeAB] Truncated time packet (len={len(data)})")
+                return False
             # Panel Time
             log.debug("[handle_msgtypeAB] ***************************** Got Panel Time ****************************")
 
@@ -5726,6 +5750,9 @@ class PacketHandling(ProtocolBase):
         log.debug(f"[handle_msgtypeC0] ******************************************************** Should not be here *************************************************")
 
     def _handle_msgtypeE0(self, data):  # Visonic Proxy
+        if len(data) < 6:
+            log.warning(f"[handle_msgtypeE0] Truncated packet (len={len(data)})")
+            return
         # 0d e0 <no of alarm clients connected> <no of visonic clients connected> <no of monitor clients connected> <if in proxy mode> <if in stealth mode> 43 <checksum> 0a
         log.debug(f'[handle_msgtypeE0]  Visonic Proxy Status   '
                   f'Alarm: {"Connected" if data[0] == 1 else "Disconnected"}    '
@@ -5784,6 +5811,9 @@ class PacketHandling(ProtocolBase):
 
     def _handle_msgtypeF4(self, data) -> bool:  # Static JPG Image
         """ MsgType=F4 - Static JPG Image """
+        if len(data) < 4:
+            log.warning(f"[handle_msgtypeF4] Truncated packet (len={len(data)})")
+            return False
 
         #log.debug(f"[handle_msgtypeF4]  data {toString(data)}")
 

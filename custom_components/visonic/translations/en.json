@@ -42,6 +42,17 @@
                     "baud": "Baud Rate"
                 }
             },
+            "reconfigure": {
+                "description": "Update your Visonic Panel connection settings",
+                "title": "Reconfigure Visonic Connection",
+                "data": {
+                    "host": "Host Address",
+                    "port": "Port",
+                    "esphome_entity_select": "ESPHome Baud Entity (PowerMaster only)",
+                    "path": "USB Local Path",
+                    "baud": "Baud Rate"
+                }
+            },
   		    "zeroconf_confirm": {
 				"description": "Do you want to add the Visonic Panel ({name}) to Home Assistant? It will be added with 'full use' values in Powerlink Emulation Mode.",
 				"title": "Discovered Visonic Panel"

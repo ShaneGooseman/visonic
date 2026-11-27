@@ -42,6 +42,17 @@
 					"baud": "Baudsnelheid"
 				}
 			},
+			"reconfigure": {
+				"description": "Werk de verbindingsinstellingen van het Visonic-paneel bij",
+				"title": "Visonic-verbinding opnieuw configureren",
+				"data": {
+					"host": "Hostadres",
+					"port": "Poort",
+					"esphome_entity_select": "ESPHome Baud-entiteit (alleen PowerMaster)",
+					"path": "Lokale USB bestandspad",
+					"baud": "Baudsnelheid"
+				}
+			},
   		    "zeroconf_confirm": {
 				"description": "Do you want to add the Visonic Panel ({name}) to Home Assistant? It will be added with 'full use' values in Powerlink Emulation Mode.",
 				"title": "Discovered Visonic Panel"

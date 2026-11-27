@@ -626,8 +626,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: VisonicConfigEntry) -> b
         else:
             # add update listener to unload.  The update listener is used when the user edits an existing configuration.
             entry.async_on_unload(entry.add_update_listener(update_listener))
-            # if total attempts is greater than 1 then connect as a separate task, and return success (i.e. True)
-            tmp = hass.loop.create_task(client.async_connect(force=False))
+            # if total attempts is greater than 0 then connect as a managed background task tied to entry lifecycle
+            entry.async_create_background_task(
+                hass,
+                client.async_connect(force=False),
+                name=f"visonic_connect_{panel_id}",
+            )
             _LOGGER.debug(f"[Visonic Setup] Returning Success for entry id {entry.entry_id}")
             return True
 

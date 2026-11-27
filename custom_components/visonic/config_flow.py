@@ -483,6 +483,45 @@ class VisonicConfigFlow(ConfigFlow, MyHandlers, domain=DOMAIN):
             return self.async_create_entry(title=info["title"], data=user_input)
         return self.async_abort(reason=TRANSLATE_ERROR_DEVICE)
 
+    async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Handle reconfiguration of connection parameters without removing the entry."""
+        reconfigure_entry = self._get_reconfigure_entry()
+        current_data = {**reconfigure_entry.data, **reconfigure_entry.options}
+        device_type = str(current_data.get(CONF_DEVICE_TYPE, DEVICE_TYPE_ETHERNET)).lower()
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            if device_type == DEVICE_TYPE_ETHERNET:
+                try:
+                    self.select_entity_or_empty(user_input.get(CONF_ESPHOME_ENTITY_SELECT, ""))
+                except vol.Invalid as err:
+                    errors[CONF_ESPHOME_ENTITY_SELECT] = str(err)
+
+                if not errors:
+                    error_key = await async_validate_ethernet_connection(
+                        user_input.get(CONF_HOST, ""),
+                        user_input.get(CONF_PORT, "0"),
+                    )
+                    if error_key is not None:
+                        errors["base"] = error_key
+
+            if not errors:
+                return self.async_update_reload_and_abort(
+                    reconfigure_entry,
+                    data_updates=user_input,
+                )
+
+        if device_type == DEVICE_TYPE_USB:
+            schema = self.myschema.create_schema_usb(current_data)
+        else:
+            schema = self.myschema.create_schema_ethernet(current_data)
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=schema,
+            errors=errors,
+        )
+
     # this is run to import the configuration.yaml parameters
     async def async_step_import(self, import_config):
         """Import a config entry from configuration.yaml."""

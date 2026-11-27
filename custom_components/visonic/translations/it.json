@@ -42,6 +42,17 @@
                     "baud": "Velocit\u00E0 di Trasmissione"
                 }
             },
+            "reconfigure": {
+                "description": "Aggiorna le impostazioni di connessione del pannello Visonic",
+                "title": "Riconfigura connessione Visonic",
+                "data": {
+                    "host": "Indirizzo Host",
+                    "port": "Porta",
+                    "esphome_entity_select": "Entit\u00e0 Baud ESPHome (solo PowerMaster)",
+                    "path": "Percorso Locale USB",
+                    "baud": "Velocit\u00E0 di Trasmissione"
+                }
+            },
   		    "zeroconf_confirm": {
 				"description": "Do you want to add the Visonic Panel ({name}) to Home Assistant? It will be added with 'full use' values in Powerlink Emulation Mode.",
 				"title": "Discovered Visonic Panel"

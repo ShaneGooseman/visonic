@@ -42,6 +42,17 @@
                     "baud": "D\u00e9bit en bauds"
                 }
             },
+            "reconfigure": {
+                "description": "Mettre \u00e0 jour les param\u00e8tres de connexion de la centrale Visonic",
+                "title": "Reconfigurer la connexion Visonic",
+                "data": {
+                    "host": "Adresse H\u00f4te",
+                    "port": "Port",
+                    "esphome_entity_select": "Entit\u00e9 Baud ESPHome (PowerMaster uniquement)",
+                    "path": "Chemin local USB",
+                    "baud": "D\u00e9bit en bauds"
+                }
+            },
   		    "zeroconf_confirm": {
 				"description": "Do you want to add the Visonic Panel ({name}) to Home Assistant? It will be added with 'full use' values in Powerlink Emulation Mode.",
 				"title": "Discovered Visonic Panel"

@@ -360,6 +360,9 @@ class EPROMManager:
     #      When we send a MSG_DL and insert the 4 bytes from pmDownloadItem_t, what we're doing is setting the page, index and len
     # This function stores the downloaded status and EPROM data
     def saveEPROMSettings(self, page, index, setting):
+        if not (0 <= page <= 0xFF) or not (0 <= index <= 0xFF):
+            log.warning(f"[Write Settings] Invalid EPROM page/index ({page}, {index})")
+            return
         settings_len = len(setting)
         wrappoint = index + settings_len - 0x100
         sett = [bytearray(b""), bytearray(b"")]
@@ -452,7 +455,7 @@ class EPROMManager:
                 for j in range(0, 0x100, 0x10):  ## assume that each page can be 256 bytes long, step by 16 bytes
                     # do not display the rows with pin numbers
                     # if not (( p == 1 and j == 240 ) or (p == 2 and j == 0) or (p == 10 and j >= 140)):
-                    if EPROM_DOWNLOAD_ALL or ((p != 1 or j != 240) and (p != 2 or j != 0) and (p != 10 or j <= 140)):
+                    if EPROM_DOWNLOAD_ALL or ((p != 1 or j != 240) and (p != 2 or j != 0) and (p != 10 or j < 140)):
                         if j <= len(self.pmRawSettings[p]):
                             s = toString(self.pmRawSettings[p][j : j + 0x10])
                             log.debug(f"{p:3}:{j:3}  {s}")
