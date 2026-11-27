@@ -67,3 +67,7 @@ TTL logic levels:
 Always use **8 data bits, No parity, 1 stop bit (8N1)** with flow control (CTS/RTS) disabled:
 - Firmware **≤ 17.133:** `9600` baud
 - Firmware **≥ 18.xxx:** `38400` baud *(some early 18.040 panels may still use `9600`; test both if no data is received)*
+
+---
+
+*Original integration and documentation by [@davesmeghead](https://github.com/davesmeghead/visonic). Maintained and updated in this fork by [@ShaneGooseman](https://github.com/ShaneGooseman/visonic).*

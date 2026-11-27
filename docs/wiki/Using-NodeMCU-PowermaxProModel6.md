@@ -50,3 +50,7 @@ This guide explains how to use a **NodeMCU (ESP8266)** flashed with **`esp-link`
 sudo socat -d -d pty,link=/dev/ip1,raw,echo=0,waitslave tcp:192.168.1.123:23
 screen /dev/ip1 9600
 ```
+
+---
+
+*Original integration and documentation by [@davesmeghead](https://github.com/davesmeghead/visonic). Maintained and updated in this fork by [@ShaneGooseman](https://github.com/ShaneGooseman/visonic).*

@@ -31,3 +31,9 @@
   - [NodeMCU y esp-link](https://github.com/ShaneGooseman/visonic/wiki/Using-NodeMCU-PowermaxProModel6-ES)
   - [USR-TCP232 / USR-WIFI232-D2](https://github.com/ShaneGooseman/visonic/wiki/USR-WIFI232-D2-ES)
 - [Notas técnicas del panel](https://github.com/ShaneGooseman/visonic/wiki/Panel-Stuff-ES)
+
+---
+
+*Original author / Autor original: [@davesmeghead](https://github.com/davesmeghead/visonic)*
+
+*Fork maintainer / Mantenedor del fork: [@ShaneGooseman](https://github.com/ShaneGooseman/visonic)*

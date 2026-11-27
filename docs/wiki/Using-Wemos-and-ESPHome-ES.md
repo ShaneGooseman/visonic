@@ -39,3 +39,7 @@ La plantilla expone 4 interruptores de relé (`D6`/`D7` activos en bajo, `D2`/`D
 3. **Home Assistant:**
    - Añade el dispositivo **ESPHome** si usas los relés/LED.
    - Añade la integración **Visonic Intruder Alarm** con tipo de conexión **Ethernet**, indicando la IP estática y el puerto TCP del Wemos.
+
+---
+
+*Integración y documentación originales por [@davesmeghead](https://github.com/davesmeghead/visonic). Mantenida y actualizada en este fork por [@ShaneGooseman](https://github.com/ShaneGooseman/visonic).*

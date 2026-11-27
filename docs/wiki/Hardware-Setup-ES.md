@@ -67,3 +67,7 @@ Niveles lógicos TTL:
 Configura siempre **8 bits de datos, sin paridad, 1 bit de parada (8N1)** y sin control de flujo (CTS/RTS desactivado):
 - Firmware **≤ 17.133:** `9600` baudios
 - Firmware **≥ 18.xxx:** `38400` baudios *(algunos paneles 18.040 tempranos pueden usar `9600`; prueba ambas velocidades si no recibes datos)*
+
+---
+
+*Integración y documentación originales por [@davesmeghead](https://github.com/davesmeghead/visonic). Mantenida y actualizada en este fork por [@ShaneGooseman](https://github.com/ShaneGooseman/visonic).*

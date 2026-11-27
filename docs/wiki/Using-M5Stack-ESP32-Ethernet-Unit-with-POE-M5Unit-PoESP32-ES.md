@@ -40,3 +40,7 @@ Configura `secrets.yaml` con `network_port` (ej. `10077`), `panel_baud_rate` (`9
 3. Resultado final antes de cerrar la carcasa del panel:
    ![Resultado final](images/m5stack_image3.png)
 4. Añade la integración **Visonic Intruder Alarm** en Home Assistant seleccionando **Ethernet** con la IP del `M5Unit-PoESP32` y el puerto TCP configurado.
+
+---
+
+*Integración y documentación originales por [@davesmeghead](https://github.com/davesmeghead/visonic). Mantenida y actualizada en este fork por [@ShaneGooseman](https://github.com/ShaneGooseman/visonic).*

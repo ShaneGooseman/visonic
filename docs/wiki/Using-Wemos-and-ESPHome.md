@@ -39,3 +39,7 @@ The template exposes 4 relay switches (`D6`/`D7` active-low, `D2`/`D5` active-hi
 3. **Home Assistant:**
    - Add the **ESPHome** device if using the relay/LED entities.
    - Add the **Visonic Intruder Alarm** integration with connection type **Ethernet**, using the Wemos static IP and configured TCP port.
+
+---
+
+*Original integration and documentation by [@davesmeghead](https://github.com/davesmeghead/visonic). Maintained and updated in this fork by [@ShaneGooseman](https://github.com/ShaneGooseman/visonic).*

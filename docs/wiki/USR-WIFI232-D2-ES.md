@@ -36,3 +36,7 @@ Conéctate a la red Wi-Fi del módulo y abre `http://10.10.100.254`.
 4. Asigna una dirección IP fija en tu red local (o reserva DHCP) y elige un puerto TCP **> 1024**.
 5. En el `USR-WIFI232-D2`, configura el SSID y contraseña de tu red Wi-Fi doméstica.
 6. Guarda y reinicia el módulo, realiza opcionalmente la [prueba de bucle (Loopback)](https://github.com/ShaneGooseman/visonic/wiki/Home-ES#solucion-de-problemas) y añade la integración **Visonic Intruder Alarm** en Home Assistant seleccionando **Ethernet** con la IP y el puerto TCP del módulo.
+
+---
+
+*Integración y documentación originales por [@davesmeghead](https://github.com/davesmeghead/visonic). Mantenida y actualizada en este fork por [@ShaneGooseman](https://github.com/ShaneGooseman/visonic).*
