@@ -54,6 +54,7 @@ class VisonicSelect(SelectEntity):
         self._client = client
         self._visonic_device = visonic_device
         self._unsub_device = self._visonic_device.onChange(self.onChange)
+        self._unsub_registry = client.register_sensor_entity(visonic_device.getDeviceID(), self)
         dname = visonic_device.createFriendlyName()
         pname = client.getMyString()
         self._name = str(pname + dname).lower()  # this must match the binary_sensor self._name so that device_info associates them
@@ -78,10 +79,31 @@ class VisonicSelect(SelectEntity):
         if self._unsub_device is not None:
             self._unsub_device()
             self._unsub_device = None
+        if self._unsub_registry is not None:
+            self._unsub_registry()
+            self._unsub_registry = None
         self._visonic_device = None
         self._client = None
         self._is_available = False
         await super().async_will_remove_from_hass()
+
+    def mark_disconnected(self) -> None:
+        """Mark select entity unavailable while panel connection is down."""
+        self._is_available = False
+        if self.hass is not None and self.entity_id is not None:
+            self.async_write_ha_state()
+
+    def rebind_device(self, sensor: AlSensorDevice) -> None:
+        """Re-bind select entity to a new AlSensorDevice instance after reconnect."""
+        if self._unsub_device is not None:
+            self._unsub_device()
+        self._visonic_device = sensor
+        self._unsub_device = self._visonic_device.onChange(self.onChange)
+        self._is_available = self._visonic_device.isEnrolled()
+        self._is_armed = not self._visonic_device.isBypass()
+        self._pending_state_is_armed = None
+        if self.hass is not None and self.entity_id is not None:
+            self.async_write_ha_state()
 
     def onChange(self, sensor : AlSensorDevice, s : AlSensorCondition):
         """Call on any change to the sensor."""

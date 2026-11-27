@@ -49,8 +49,10 @@ class VisonicImage(ImageEntity):
         self._attr_image_url = None
         self._attr_content_type = "image/jpeg"
         self._attr_should_poll = False
+        self._client = client
         self._visonic_device = visonic_device
         self._unsub_device = self._visonic_device.onChange(self.onChange)
+        self._unsub_registry = client.register_sensor_entity(visonic_device.getDeviceID(), self)
         dname = visonic_device.createFriendlyName()
         pname = client.getMyString()
         self._name = str(pname + dname).lower()
@@ -73,10 +75,30 @@ class VisonicImage(ImageEntity):
         if self._unsub_device is not None:
             self._unsub_device()
             self._unsub_device = None
+        if self._unsub_registry is not None:
+            self._unsub_registry()
+            self._unsub_registry = None
         self._visonic_device = None
+        self._client = None
         self._sensor_image = None
         self._is_available = False
         await super().async_will_remove_from_hass()
+
+    def mark_disconnected(self) -> None:
+        """Mark image entity unavailable while panel connection is down."""
+        self._is_available = False
+        if self.hass is not None and self.entity_id is not None:
+            self.async_write_ha_state()
+
+    def rebind_device(self, sensor: AlSensorDevice) -> None:
+        """Re-bind image entity to a new AlSensorDevice instance after reconnect."""
+        if self._unsub_device is not None:
+            self._unsub_device()
+        self._visonic_device = sensor
+        self._unsub_device = self._visonic_device.onChange(self.onChange)
+        self._is_available = self._visonic_device.isEnrolled()
+        if self.hass is not None and self.entity_id is not None:
+            self.async_write_ha_state()
 
     def onChange(self, sensor : AlSensorDevice, s : AlSensorCondition):
         """Call on any change to the sensor."""

@@ -56,6 +56,7 @@ class VisonicSwitch(SwitchEntity):
         self._client = client
         self._visonic_device = visonic_device
         self._unsub_device = self._visonic_device.onChange(self.onChange)
+        self._unsub_registry = client.register_switch_entity(visonic_device.getDeviceID(), self)
         self._x10id = self._visonic_device.getDeviceID()
         self._panel = client.getPanelID()
         self._current_value = self._visonic_device.isOn()
@@ -79,10 +80,30 @@ class VisonicSwitch(SwitchEntity):
         if self._unsub_device is not None:
             self._unsub_device()
             self._unsub_device = None
+        if self._unsub_registry is not None:
+            self._unsub_registry()
+            self._unsub_registry = None
         self._visonic_device = None
         self._is_available = False
         self._client = None
         await super().async_will_remove_from_hass()
+
+    def mark_disconnected(self) -> None:
+        """Mark switch entity unavailable while panel connection is down."""
+        self._is_available = False
+        if self.hass is not None and self.entity_id is not None:
+            self.async_write_ha_state()
+
+    def rebind_device(self, switch: AlSwitchDevice) -> None:
+        """Re-bind switch entity to a new AlSwitchDevice instance after reconnect."""
+        if self._unsub_device is not None:
+            self._unsub_device()
+        self._visonic_device = switch
+        self._unsub_device = self._visonic_device.onChange(self.onChange)
+        self._current_value = self._visonic_device.isOn()
+        self._is_available = True
+        if self.hass is not None and self.entity_id is not None:
+            self.async_write_ha_state()
 
     @cached_property
     def name(self) -> str | None:

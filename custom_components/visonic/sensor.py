@@ -244,15 +244,35 @@ class VisonicZoneSensor(SensorEntity):
             self._attr_device_class = SensorDeviceClass.ILLUMINANCE
             self._attr_native_unit_of_measurement = LIGHT_LUX
             self._attr_name = "Illuminance"
+        self._client = client
         self._unsub_device = self._visonic_device.onChange(self._on_change)
+        self._unsub_registry = client.register_sensor_entity(sensor.getDeviceID(), self)
 
     async def async_will_remove_from_hass(self) -> None:
         """Unsubscribe when removed from Home Assistant."""
         if self._unsub_device is not None:
             self._unsub_device()
             self._unsub_device = None
+        if self._unsub_registry is not None:
+            self._unsub_registry()
+            self._unsub_registry = None
         self._visonic_device = None
+        self._client = None
         await super().async_will_remove_from_hass()
+
+    def mark_disconnected(self) -> None:
+        """Update availability state while panel connection is down."""
+        if self.hass is not None and self.entity_id is not None:
+            self.async_write_ha_state()
+
+    def rebind_device(self, sensor: AlSensorDevice) -> None:
+        """Re-bind measurement sensor to a new AlSensorDevice instance after reconnect."""
+        if self._unsub_device is not None:
+            self._unsub_device()
+        self._visonic_device = sensor
+        self._unsub_device = self._visonic_device.onChange(self._on_change)
+        if self.hass is not None and self.entity_id is not None:
+            self.async_write_ha_state()
 
     def _on_change(self, sensor: AlSensorDevice, condition: AlSensorCondition) -> None:
         """Write updated measurement on sensor change."""
@@ -261,8 +281,13 @@ class VisonicZoneSensor(SensorEntity):
 
     @property
     def available(self) -> bool:
-        """Return True if the zone sensor is enrolled."""
-        return self._visonic_device is not None and self._visonic_device.isEnrolled()
+        """Return True if the panel is connected and the zone sensor is enrolled."""
+        return (
+            self._client is not None
+            and self._client.isPanelConnected()
+            and self._visonic_device is not None
+            and self._visonic_device.isEnrolled()
+        )
 
     @property
     def native_value(self) -> float | int | None:

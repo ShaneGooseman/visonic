@@ -115,6 +115,7 @@ class VisonicBinarySensor(BinarySensorEntity):
         self._current_value = (self._visonic_device.isTriggered() or self._visonic_device.isOpen())
         self._is_available = self._visonic_device.isEnrolled()
         self._unsub_device = self._visonic_device.onChange(self.onChange)
+        self._unsub_registry = client.register_sensor_entity(sensor.getDeviceID(), self)
         self._attr_unique_id = slugify(f"{self._name}_sensor")
         self._attr_should_poll = False
         self._attr_has_entity_name = True
@@ -139,10 +140,30 @@ class VisonicBinarySensor(BinarySensorEntity):
         if self._unsub_device is not None:
             self._unsub_device()
             self._unsub_device = None
+        if self._unsub_registry is not None:
+            self._unsub_registry()
+            self._unsub_registry = None
         self._visonic_device = None
         self._is_available = False
         self._client = None
         await super().async_will_remove_from_hass()
+
+    def mark_disconnected(self) -> None:
+        """Mark sensor unavailable while panel connection is down."""
+        self._is_available = False
+        if self.hass is not None and self.entity_id is not None:
+            self.async_write_ha_state()
+
+    def rebind_device(self, sensor: AlSensorDevice) -> None:
+        """Re-bind entity to a new AlSensorDevice instance after reconnect."""
+        if self._unsub_device is not None:
+            self._unsub_device()
+        self._visonic_device = sensor
+        self._unsub_device = self._visonic_device.onChange(self.onChange)
+        self._current_value = self._visonic_device.isTriggered() or self._visonic_device.isOpen()
+        self._is_available = self._visonic_device.isEnrolled()
+        if self.hass is not None and self.entity_id is not None:
+            self.async_write_ha_state()
 
     async def _retainStateTimout(self):
         if self._client is None:
@@ -332,15 +353,35 @@ class VisonicZoneDiagnosticBinarySensor(BinarySensorEntity):
         else:
             self._attr_device_class = BinarySensorDeviceClass.BATTERY
             self._attr_name = "Battery"
+        self._client = client
         self._unsub_device = self._visonic_device.onChange(self._on_change)
+        self._unsub_registry = client.register_sensor_entity(sensor.getDeviceID(), self)
 
     async def async_will_remove_from_hass(self) -> None:
         """Unsubscribe when removed from Home Assistant."""
         if self._unsub_device is not None:
             self._unsub_device()
             self._unsub_device = None
+        if self._unsub_registry is not None:
+            self._unsub_registry()
+            self._unsub_registry = None
         self._visonic_device = None
+        self._client = None
         await super().async_will_remove_from_hass()
+
+    def mark_disconnected(self) -> None:
+        """Update availability state while panel connection is down."""
+        if self.hass is not None and self.entity_id is not None:
+            self.async_write_ha_state()
+
+    def rebind_device(self, sensor: AlSensorDevice) -> None:
+        """Re-bind diagnostic entity to a new AlSensorDevice instance after reconnect."""
+        if self._unsub_device is not None:
+            self._unsub_device()
+        self._visonic_device = sensor
+        self._unsub_device = self._visonic_device.onChange(self._on_change)
+        if self.hass is not None and self.entity_id is not None:
+            self.async_write_ha_state()
 
     def _on_change(self, sensor: AlSensorDevice, condition: AlSensorCondition) -> None:
         """Write state updates on sensor change."""
@@ -349,8 +390,13 @@ class VisonicZoneDiagnosticBinarySensor(BinarySensorEntity):
 
     @property
     def available(self) -> bool:
-        """Return True if the underlying zone sensor is enrolled."""
-        return self._visonic_device is not None and self._visonic_device.isEnrolled()
+        """Return True if the panel is connected and the underlying zone sensor is enrolled."""
+        return (
+            self._client is not None
+            and self._client.isPanelConnected()
+            and self._visonic_device is not None
+            and self._visonic_device.isEnrolled()
+        )
 
     @property
     def is_on(self) -> bool | None:

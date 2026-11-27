@@ -228,7 +228,7 @@ class VisonicClient:
     def _getTimeFunction(self) -> datetime:
         return datetime.now(timezone.utc).astimezone()
 
-    def _initialise(self):
+    def _initialise(self, preserve_entities: bool = False):
         from .. import pmLogEvent_t, pmLogPowerMaxUser_t
         # panel connection
         self.logstate_debug("reset client panel variables")
@@ -242,7 +242,6 @@ class VisonicClient:
         self.cvp: ClientVisonicProtocol = None
         self.visonicProtocol : AlPanelInterface = None
         self.SystemStarted = False
-        self._createdAlarmPanel = False
         self._serial_baud_rate = int(self.entry.options.get(CONF_DEVICE_BAUD, DEFAULT_DEVICE_BAUD))
         if self._serial_baud_rate == 9600:
             self.connection_baud_list_reset = [ 38400, 9600, 38400, 9600 ]   # Try these bauds in sequence, as each is tried then delete it, once the list is empty then give up
@@ -261,13 +260,19 @@ class VisonicClient:
         
         self.rationalised_ha_devices = False
         
-        self.onChangeHandler = set()
-        
-        self.panel_entity_name = {}
+        if not preserve_entities:
+            self._createdAlarmPanel = False
+            self._stop_listener_registered = False
+            self.onChangeHandler = set()
+            self.panel_entity_name = {}
+            self.image_list = list()
+            self.zone_measurement_sensors: set[tuple[int, str]] = set()
+            self._created_sensor_ids: set[int] = set()
+            self._created_switch_ids: set[int] = set()
+            self._sensor_entities: dict[int, list[Any]] = {}
+            self._switch_entities: dict[int, list[Any]] = {}
 
         self.sensor_list = list()
-        self.image_list = list()
-        self.zone_measurement_sensors: set[tuple[int, str]] = set()
         self.x10_list = list()
 
         self.delayBetweenAttempts = 60.0
@@ -737,6 +742,7 @@ class VisonicClient:
                 identifiers = {(DOMAIN, name)}
                 device_registry = dr.async_get(self.hass)
                 stype = dev.getType()
+                dev_id = dev.getDeviceID()
                 if create and dev not in self.x10_list:
                     n = (
                         f"Visonic {d}"
@@ -753,13 +759,21 @@ class VisonicClient:
                         ),
                     )
 
-                    self.logstate_debug(f"X10 Switch list {dev.getDeviceID()=}")
+                    self.logstate_debug(f"X10 Switch list {dev_id=}")
+                    self.x10_list = [x for x in self.x10_list if x.getDeviceID() != dev_id]
                     self.x10_list.append(dev)
-                    await self._setupVisonicEntity(SWITCH_DOMAIN, dev)
-                elif not create and dev in self.x10_list:
+                    if dev_id in self._created_switch_ids:
+                        for entity in list(self._switch_entities.get(dev_id, [])):
+                            entity.rebind_device(dev)
+                    else:
+                        self._created_switch_ids.add(dev_id)
+                        await self._setupVisonicEntity(SWITCH_DOMAIN, dev)
+                elif not create and (dev in self.x10_list or dev_id in self._created_switch_ids):
                     # delete
-                    self.x10_list.remove(dev)
-                    self.logstate_debug(f"X10 Device {dev.getDeviceID()} to be deleted")
+                    self.x10_list = [x for x in self.x10_list if x.getDeviceID() != dev_id]
+                    self._created_switch_ids.discard(dev_id)
+                    self._switch_entities.pop(dev_id, None)
+                    self.logstate_debug(f"X10 Device {dev_id} to be deleted")
                     device_entry = device_registry.async_get_device(identifiers=identifiers)
                     if device_entry:
                         device_registry.async_remove_device(device_entry.id)
@@ -838,6 +852,7 @@ class VisonicClient:
                 name = slugify(self.getDevicePrefix(self.panelident) + d).lower()
                 identifiers = {(DOMAIN, name)}
                 device_registry = dr.async_get(self.hass)
+                dev_id = sensor.getDeviceID()
                 if create and sensor not in self.sensor_list:
                     st: AlSensorType = sensor.getSensorType()
                     st: str = str(st).title()
@@ -860,16 +875,29 @@ class VisonicClient:
                         #via_device=(DOMAIN, name),
                     )
                     self.logstate_debug("Adding Sensor %s", sensor)
+                    self.sensor_list = [s_old for s_old in self.sensor_list if s_old.getDeviceID() != dev_id]
                     self.sensor_list.append(sensor)
-                    await self._setupVisonicEntity(BINARY_SENSOR_DOMAIN, sensor)
-                    # If not Standard Mode (i.e. Powerlink) and the user has allowed sensors to be bypassed, then create select entities
-                    if not self.ForceStandardMode and self.toBool(self.config.get(CONF_ENABLE_SENSOR_BYPASS, False)):
-                        # The connection to the panel allows interaction with the sensor, including the arming/bypass of the sensors
-                        await self._setupVisonicEntity(SELECT_DOMAIN, sensor)
-                elif not create and sensor in self.sensor_list:
+                    if dev_id in self._created_sensor_ids:
+                        for entity in list(self._sensor_entities.get(dev_id, [])):
+                            entity.rebind_device(sensor)
+                    else:
+                        self._created_sensor_ids.add(dev_id)
+                        await self._setupVisonicEntity(BINARY_SENSOR_DOMAIN, sensor)
+                        # If not Standard Mode (i.e. Powerlink) and the user has allowed sensors to be bypassed, then create select entities
+                        if not self.ForceStandardMode and self.toBool(self.config.get(CONF_ENABLE_SENSOR_BYPASS, False)):
+                            # The connection to the panel allows interaction with the sensor, including the arming/bypass of the sensors
+                            await self._setupVisonicEntity(SELECT_DOMAIN, sensor)
+                elif not create and (sensor in self.sensor_list or dev_id in self._created_sensor_ids):
                     # delete
-                    self.sensor_list.remove(sensor)
-                    self.logstate_debug(f"Sensor Zone Z{sensor.getDeviceID():0>2} to be deleted, also need to delete the select entity if it was created")
+                    self.sensor_list = [s_old for s_old in self.sensor_list if s_old.getDeviceID() != dev_id]
+                    self._created_sensor_ids.discard(dev_id)
+                    self._sensor_entities.pop(dev_id, None)
+                    if dev_id in self.image_list:
+                        self.image_list.remove(dev_id)
+                    self.zone_measurement_sensors = {
+                        item for item in self.zone_measurement_sensors if item[0] != dev_id
+                    }
+                    self.logstate_debug(f"Sensor Zone Z{dev_id:0>2} to be deleted, also need to delete the select entity if it was created")
                     dev = device_registry.async_get_device(identifiers=identifiers)
                     if dev:
                         device_registry.async_remove_device(dev.id)
@@ -906,6 +934,53 @@ class VisonicClient:
                 self.zone_measurement_sensors.add((dev_id, "lux"))
                 await self._setupVisonicEntity(SENSOR_DOMAIN, (sensor, "lux"))
 
+    def register_sensor_entity(self, device_id: int, entity: Any) -> Callable[[], None]:
+        """Track a HA entity bound to a sensor device_id so reconnects can rebind it in-place."""
+        entities = self._sensor_entities.setdefault(device_id, [])
+        if entity not in entities:
+            entities.append(entity)
+
+        def _unregister() -> None:
+            lst = self._sensor_entities.get(device_id)
+            if lst is not None:
+                try:
+                    lst.remove(entity)
+                except ValueError:
+                    pass
+                if not lst:
+                    self._sensor_entities.pop(device_id, None)
+
+        return _unregister
+
+    def register_switch_entity(self, device_id: int, entity: Any) -> Callable[[], None]:
+        """Track a HA entity bound to a switch device_id so reconnects can rebind it in-place."""
+        entities = self._switch_entities.setdefault(device_id, [])
+        if entity not in entities:
+            entities.append(entity)
+
+        def _unregister() -> None:
+            lst = self._switch_entities.get(device_id)
+            if lst is not None:
+                try:
+                    lst.remove(entity)
+                except ValueError:
+                    pass
+                if not lst:
+                    self._switch_entities.pop(device_id, None)
+
+        return _unregister
+
+    def _notify_entities_disconnected(self) -> None:
+        """Mark bound sensor and switch entities unavailable while panel connection is down."""
+        for entities in list(self._sensor_entities.values()):
+            for entity in list(entities):
+                if hasattr(entity, "mark_disconnected"):
+                    entity.mark_disconnected()
+        for entities in list(self._switch_entities.values()):
+            for entity in list(entities):
+                if hasattr(entity, "mark_disconnected"):
+                    entity.mark_disconnected()
+
     def onChange(self, callback : Callable):
         self.onChangeHandler.add(callback)
         def _unsubscribe():
@@ -920,7 +995,7 @@ class VisonicClient:
 
     def _fire_on_change_handlers(self):
         # Call all the registered client change handlers
-        for cb in self.onChangeHandler:
+        for cb in list(self.onChangeHandler):
             cb()
 
     def _fireHAEvent(self, event_id: AlCondition | PanelCondition, datadictionary: dict):
@@ -1979,7 +2054,7 @@ class VisonicClient:
                 if call.context.user_id:
                     #self.logstate_debug(f"Checking user information for permissions: {call.context.user_id}")
                     # Check security permissions (that this user has access to the alarm panel entity)
-                    await self._checkUserPermission(call, POLICY_CONTROL, Platform.ALARM_CONTROL_PANEL + "." + slugify(self.getAlarmPanelUniqueIdent()))
+                    await self._checkUserPermission(call, POLICY_CONTROL, self._get_panel_entity_id())
             await self.async_reconnect_and_restart(allow_comms = True, force_reconnect = True, allow_restart = False)
         except Exception as ex:
             # Do not cause a full Home Assistant Exception, keep it local here
@@ -2024,11 +2099,12 @@ class VisonicClient:
                     self.logstate_debug(f"........... Shutting down Visonic Protocol Handler")
                     self.visonicProtocol.shutdownOperation()
 
-            # Reset all variables, include setting self.SystemStarted to False and self.visonicProtocol to None
+            # Reset connection state while preserving live entity subscriptions so reconnects rebind cleanly
             self.logstate_debug(f"........... Initialising Client Variables to default to prevent any further interaction")
-            self._initialise()
+            self._initialise(preserve_entities=True)
             # Notify existing entities so they transition cleanly to unavailable while disconnected
             self._fire_on_change_handlers()
+            self._notify_entities_disconnected()
         except Exception as ex:
             # Do not cause a full Home Assistant Exception, keep it local here
             self.logstate_warning(f"........... async_panel_stop, caused exception {ex}")
@@ -2044,6 +2120,16 @@ class VisonicClient:
                 _LOGGER.debug(f"[killMyDispatchers]  {p=}  Success")
             else:
                 _LOGGER.debug(f"[killMyDispatchers]  {p=}  Not Done")
+        # Reset persistent entity tracking only when platforms are actually unloaded
+        self.onChangeHandler.clear()
+        self._createdAlarmPanel = False
+        self._created_sensor_ids.clear()
+        self._created_switch_ids.clear()
+        self._sensor_entities.clear()
+        self._switch_entities.clear()
+        self.image_list.clear()
+        self.zone_measurement_sensors.clear()
+        self.panel_entity_name.clear()
         # Reset the run time data parameters, keep client (and the dispatchers are all kept but set to None above)
         entry.runtime_data.alarm_entity = None
         entry.runtime_data.sensors = list()
@@ -2173,15 +2259,18 @@ class VisonicClient:
                         self.visonicProtocol.onProblem(self.onProblem)
                         self.visonicProtocol.onNewSensor(self.onNewSensor)
                         self.visonicProtocol.onNewSwitch(self.onNewSwitch)
-                        ## Establish a callback to stop the component when the stop event occurs
-                        async def _on_ha_stop(_event) -> None:
-                            await self.async_panel_stop(killRestart=True)
+                        ## Establish a callback to stop the component when the stop event occurs (register only once)
+                        if not self._stop_listener_registered:
+                            self._stop_listener_registered = True
 
-                        self.entry.async_on_unload(
-                            self.hass.bus.async_listen_once(
-                                EVENT_HOMEASSISTANT_STOP, _on_ha_stop
+                            async def _on_ha_stop(_event) -> None:
+                                await self.async_panel_stop(killRestart=True)
+
+                            self.entry.async_on_unload(
+                                self.hass.bus.async_listen_once(
+                                    EVENT_HOMEASSISTANT_STOP, _on_ha_stop
+                                )
                             )
-                        )
                         # Record that we have started the system
                         self.SystemStarted = True
                         self._fire_on_change_handlers()
@@ -2189,8 +2278,9 @@ class VisonicClient:
 
                 if self.visonicProtocol is not None:
                     self.visonicProtocol.shutdownOperation()
-                    self._initialise()
+                    self._initialise(preserve_entities=True)
                     self._fire_on_change_handlers()
+                    self._notify_entities_disconnected()
                 else:
                     self.logstate_debug(f"........... connection unsuccessful, assume that integration has been unloaded by user (and therefore async_panel_stop has been called)")
                     
@@ -2202,6 +2292,8 @@ class VisonicClient:
         if not self.SystemStarted and self.visonicProtocol is not None:
             self.logstate_debug("........... Shutting Down Protocol")
             self.visonicProtocol.shutdownOperation()
-            self._initialise()
+            self._initialise(preserve_entities=True)
+            self._fire_on_change_handlers()
+            self._notify_entities_disconnected()
         return False
 

@@ -2706,15 +2706,9 @@ class ProtocolBase(AlPanelInterfaceHelper, AlPanelDataStream, MyChecksumCalc):
                     elif _sequencerState == SequencerType.DoingPowerlinkBridge:     ################################################################ DoingPowerlinkBridge    ###################################################
 
                         if self.PowerLinkBridgeConnected:
-                            # Keep alive functionality
-                            self.keep_alive_counter += 1    # This is for me sending to the panel
-                            if self.is_send_queue_empty() and not self.pmDownloadMode and self.keep_alive_counter >= self.KeepAlivePeriod:  #
-                                # Every self.KeepAlivePeriod seconds, unless watchdog has been reset
-                                self._reset_keep_alive_messages()
-                                # Send I'm Alive to the panel so it knows we're still here
-                                self._add_message_to_send_queue(Send.ALIVE if self.ABMessageSupported else Send.PM_KEEPALIVE) # and not self.PowerLinkBridgeConnected 
-                                #self._add_message_to_send_queue (Send.ALIVE)
-
+                            # In bridge mode (e.g. visonic_proxy PowerLink 3.1), omit Send.ALIVE (AB 03)
+                            # to avoid contending with the mobile app on the Alarm channel; bridge status
+                            # (E1 01 00 every 30s) and B0 24 panel state polling (every 25s) keep the link active.
                             if self.PowerLinkBridgeStealth:
                                 log.debug("[_sequencer] Sending commands to Bridge to exit stealth and get status")
                                 command = 2   # Stealth command
