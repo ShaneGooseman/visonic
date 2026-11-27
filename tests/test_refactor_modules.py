@@ -101,9 +101,22 @@ class TestMarketplaceReadiness(unittest.TestCase):
         self.assertEqual(keys[2:], sorted(keys[2:]))
 
         brand_dir = VISONIC_DIR / "brand"
-        for filename in ("icon.png", "icon@2x.png", "logo.png", "logo@2x.png"):
+        expected = {
+            "icon.png": (256, 256),
+            "icon@2x.png": (512, 512),
+            "dark_icon.png": (256, 256),
+            "dark_icon@2x.png": (512, 512),
+            "logo.png": (768, 256),
+            "logo@2x.png": (1536, 512),
+            "dark_logo.png": (768, 256),
+            "dark_logo@2x.png": (1536, 512),
+        }
+        import struct
+        for filename, dims in expected.items():
             raw = (brand_dir / filename).read_bytes()
             self.assertEqual(raw[:8], b"\x89PNG\r\n\x1a\n", f"{filename} is not a valid PNG")
+            w, h = struct.unpack(">II", raw[16:24])
+            self.assertEqual((w, h), dims, f"{filename} dimensions mismatch: {(w, h)} != {dims}")
 
 
 if __name__ == "__main__":
