@@ -504,12 +504,7 @@ class AlSwitchDevice(ABC):
         return f"X{self.getDeviceID():0>2}"
 
 
-class PanelConfig(TypedDict):
-    AlConfiguration.ForceStandard:        bool
-    AlConfiguration.DisableAllCommands:   bool
-    AlConfiguration.DownloadCode:         str
-#    AlConfiguration.PluginLanguage:       str
-    AlConfiguration.SirenTriggerList:     list[str]
+PanelConfig = dict[AlConfiguration, object]
 
 class AlPanelDataStream(ABC):
 
@@ -539,7 +534,7 @@ class AlPanelInterface(ABC):
         """Is the sequencer running?"""
 
     @abstractmethod
-    def isSirenActive(self, partition : int | None = None) -> (bool, AlSensorDevice | None):
+    def isSirenActive(self, partition : int | None = None) -> tuple[bool, AlSensorDevice | None]:
         """ Is the siren active. """
         return (False, None)
 

@@ -31,15 +31,12 @@ from .const import (
 
 from homeassistant.helpers import config_validation as cv
 from homeassistant import data_entry_flow
-from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
     ConfigFlowResult,
     OptionsFlow,
-    CONN_CLASS_LOCAL_POLL,
-    HANDLERS,
 )
 from homeassistant.const import CONF_DEVICE, CONF_HOST, CONF_PATH, CONF_PORT
 from homeassistant.core import callback
@@ -220,12 +217,10 @@ class MyHandlers(data_entry_flow.FlowHandler):
             # errors["base"] = TRANSLATE_ERROR_UNKNOWN
         return self.async_abort(reason=TRANSLATE_ERROR_DEVICE)
 
-@HANDLERS.register(DOMAIN)
 class VisonicConfigFlow(ConfigFlow, MyHandlers, domain=DOMAIN):
     """Handle a Visonic flow."""
 
     VERSION = 5
-    CONNECTION_CLASS = CONN_CLASS_LOCAL_POLL
 
     def __init__(self):
         """Initialize options flow."""
@@ -473,7 +468,7 @@ class VisonicConfigFlow(ConfigFlow, MyHandlers, domain=DOMAIN):
         return self._show_form(step="parameters1", errors=errors)
 
 
-    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Handle a user config flow."""
         # is this a raw configuration (not called from importing yaml)
         if not user_input:
@@ -535,7 +530,6 @@ class VisonicOptionsFlowHandler(OptionsFlow, MyHandlers):
     """Handle options."""
 
     VERSION = 5
-    CONNECTION_CLASS = CONN_CLASS_LOCAL_POLL
 
     def __init__(self) -> None:
         """Initialize options flow."""

@@ -1302,7 +1302,14 @@ class ProtocolBase(AlPanelInterfaceHelper, AlPanelDataStream, MyChecksumCalc):
         return 0
 
     def _is_valid_user_code(self) -> bool:
-        return not self.ForceStandardMode and len(self.PanelSettings[PanelSetting.UserCodes]) >= 2 and self.PanelSettings[PanelSetting.UserCodes][0] != 0 and self.PanelSettings[PanelSetting.UserCodes][1] != 0
+        return (
+            not self.ForceStandardMode
+            and len(self.PanelSettings[PanelSetting.UserCodes]) >= 2
+            and (
+                self.PanelSettings[PanelSetting.UserCodes][0] != 0
+                or self.PanelSettings[PanelSetting.UserCodes][1] != 0
+            )
+        )
 
     def _get_user_code(self):
         if self._is_valid_user_code():
@@ -5928,13 +5935,13 @@ class PacketHandling(ProtocolBase):
                             fnoseB = 0x21
                             # Tell the panel we received that one OK, we're ready for the next
                             #                                         0d f4 07 00 01 04 55 1e 01 00 15 21 0a  
-                            self._add_message_to_send_queue(convertByteArray(f'0d f4 07 00 01 04 {zone:>02} {hexify(unique_id):>02} {hexify(image_id):>02} 00 {hexify(fnoseA):>02} {hexify(fnoseB):>02} 0a'))
+                            self._add_message_to_send_queue(convertByteArray(f'0d f4 07 00 01 04 {zone:02x} {hexify(unique_id):>02} {hexify(image_id):>02} 00 {hexify(fnoseA):>02} {hexify(fnoseB):>02} 0a'))
 
                             if not lastimage:
                                 fnoseA = 0xF7
                                 fnoseB = 0xFC
                                 # Tell the panel we received that one OK, we're ready for the next
-                                self._add_message_to_send_queue(convertByteArray(f'0d f4 10 00 01 04 00 {zone:>02} {hexify(unique_id):>02} 00 {hexify(fnoseA):>02} {hexify(fnoseB):>02} 0a'))
+                                self._add_message_to_send_queue(convertByteArray(f'0d f4 10 00 01 04 00 {zone:02x} {hexify(unique_id):>02} 00 {hexify(fnoseA):>02} {hexify(fnoseB):>02} 0a'))
 
                         if lastimage:
                             # Tell the panel we received that one OK, we're ready for the next
@@ -5969,7 +5976,7 @@ class PacketHandling(ProtocolBase):
         # Other cases, the pin must be set
         if pin is None:
             bpin = self._get_user_code() # defaults to 0000
-        elif len(pin) == 4:
+        elif len(pin) == 4 and pin.isdigit():
             bpin = convertByteArray(pin[0:2] + " " + pin[2:4])
         else:
             # default to setting it to "0000" and see what happens when its sent to the panel

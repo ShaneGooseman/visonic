@@ -717,6 +717,10 @@ class ImageRecord:
             self.next_sequence = (self.next_sequence + 0x10) & 0xFF
             self.last = _getUTCTime()
             datalen = len(databuffer)
+            if self.current + datalen > self.size:
+                log.warning(f"[handle_msgtypeF4]       ERROR: Image buffer overflow ({self.current + datalen} > {self.size})")
+                self.ongoing = False
+                return False
             self.buffer[self.current : self.current+datalen] = databuffer
             self.current = self.current + datalen
             if self.current == self.size:
@@ -794,9 +798,9 @@ class AlImageManager:
     def setCurrent(self, zone, unique_id, image_id, size, sequence, lastimage, totalimages) -> bool:
         if self.hasStartedSequence():
             return False
-        self.current_zone = zone
         if zone not in self.ImageZone:
             return False
+        self.current_zone = zone
 #            log.debug("[AlImageManager]         Warning: creating empty image record to receive an image")
 #            self.create(zone, 11)          # default to 11  
         
@@ -808,6 +812,10 @@ class AlImageManager:
 
         if image_id in self.ImageZone[zone].images:
             del self.ImageZone[zone].images[image_id]
+        # Cap stored images per zone to prevent unbounded memory growth
+        while len(self.ImageZone[zone].images) >= 16:
+            oldest_key = next(iter(self.ImageZone[zone].images))
+            del self.ImageZone[zone].images[oldest_key]
         self.ImageZone[zone].images[image_id] = record
         self.ImageZone[zone].current_image = record
 

@@ -487,7 +487,6 @@ class VisonicClient:
             BinarySensorDeviceClass.MOISTURE  : em,
             BinarySensorDeviceClass.GAS       : em,
             BinarySensorDeviceClass.VIBRATION : em,
-            BinarySensorDeviceClass.VIBRATION : em,
             BinarySensorDeviceClass.HEAT      : em,
             BinarySensorDeviceClass.SOUND     : em
         }
@@ -497,23 +496,39 @@ class VisonicClient:
             return self.TriggerOffDelayList[st]
         return 120
 
+    @staticmethod
+    def _format_log_msg(msg, *args, **kwargs) -> str:
+        """Safely format log messages without failing when pre-formatted f-strings contain '%'."""
+        text = str(msg)
+        if args:
+            try:
+                text = text % args
+            except TypeError:
+                text = f"{text} {args}"
+        if kwargs:
+            try:
+                text = text % kwargs
+            except TypeError:
+                text = f"{text} {kwargs}"
+        return text
+
     def logstate_debug(self, msg, *args, **kwargs):
-        s = "P" + str(self.getPanelID()) + "  " + (msg % args % kwargs)
-        _LOGGER.debug(s)
+        s = "P" + str(self.getPanelID()) + "  " + self._format_log_msg(msg, *args, **kwargs)
+        _LOGGER.debug("%s", s)
         self.strlog.append(str(datetime.now(timezone.utc).astimezone()) + "  D " + s)
         while len(self.strlog) > MAX_CLIENT_LOG_ENTRIES:
             self.strlog.pop(0)
             
     def logstate_info(self, msg, *args, **kwargs):
-        s = "P" + str(self.getPanelID()) + "  " + (msg % args % kwargs)
-        _LOGGER.info(" " + s)
+        s = "P" + str(self.getPanelID()) + "  " + self._format_log_msg(msg, *args, **kwargs)
+        _LOGGER.info(" %s", s)
         self.strlog.append(str(datetime.now(timezone.utc).astimezone()) + "  I " + s)
         while len(self.strlog) > MAX_CLIENT_LOG_ENTRIES:
             self.strlog.pop(0)
 
     def logstate_warning(self, msg, *args, **kwargs):
-        s = "P" + str(self.getPanelID()) + "  " + (msg % args % kwargs)
-        _LOGGER.warning(s)
+        s = "P" + str(self.getPanelID()) + "  " + self._format_log_msg(msg, *args, **kwargs)
+        _LOGGER.warning("%s", s)
         self.strlog.append(str(datetime.now(timezone.utc).astimezone()) + "  W " + s)
         while len(self.strlog) > MAX_CLIENT_LOG_ENTRIES:
             self.strlog.pop(0)
@@ -1180,9 +1195,8 @@ class VisonicClient:
     def rationalise_ha_devices(self):
 
         def buildEntitySet() -> set:
-            entname = slugify(self.getAlarmPanelUniqueIdent())
-            retval = set()
-            retval.add(entname)
+            panel_ident = self.getAlarmPanelUniqueIdent()
+            retval = {panel_ident, slugify(panel_ident)}
             for sensor in self.sensor_list:
                 entname = self.getMyString() + sensor.createFriendlyName().lower()
                 retval.add(entname)
@@ -1193,7 +1207,7 @@ class VisonicClient:
  
         def filterEntitybyPanelIdent( entities : list, p : int ) -> list:
             retval = []
-            reg = f"{self.getMyString()}[xz]\\d\\d"
+            reg = f"{re.escape(self.getMyString())}([xz]\\d\\d|pgm)"
             for e in entities:
                 if re.search(reg, e.unique_id):
                     retval.append(e)
@@ -1201,11 +1215,12 @@ class VisonicClient:
             
         def filterDevicebyPanelIdent( devices : list, p : int ) -> list:
             retval = []
-            reg = f"{self.getMyString()}[xz]\\d\\d"
+            reg = f"^{re.escape(self.getMyString())}([xz]\\d\\d|pgm)$"
             for d in devices:
                 for i in d.identifiers:
-                    if re.search(reg, i[1] ):
+                    if re.search(reg, i[1]):
                         retval.append(d)
+                        break
             return retval                
 
         # Get the set of sensors and switches created by this panel (a set contains unique items, no duplication)
@@ -1244,6 +1259,7 @@ class VisonicClient:
                         entity_reg.async_remove(entity.entity_id)
                     # Delete this device
                     device_reg.async_remove_device(device.id)
+                    break
 
         # Get the entities that are associated with this config
 #        entity_entries = er.async_entries_for_config_entry(entity_reg, self.getEntryID())

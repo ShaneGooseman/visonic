@@ -338,31 +338,32 @@ async def async_setup(hass: HomeAssistant, base_config: dict):
         persistent_notification.create(hass, message, title=NOTIFICATION_TITLE, notification_id=NOTIFICATION_ID)
 
     def getClient(call):
-        #_LOGGER.debug(f"Client Not Found called")        
-        if isinstance(call.data, dict):
-            #_LOGGER.debug(f"Client Not Found called {call}")
-            if ATTR_ENTITY_ID in call.data:
-                eid = str(call.data[ATTR_ENTITY_ID])
-                if valid_entity_id(eid):
-                    mybpstate = hass.states.get(eid)
-                    if mybpstate is not None:
-                        if PANEL_ATTRIBUTE_NAME in mybpstate.attributes:
-                            panel = mybpstate.attributes[PANEL_ATTRIBUTE_NAME]
-                            client = findClient(hass, panel)
-                            if client is not None:
-                                #_LOGGER.debug(f"getClient success for panel {panel}")
-                                return client, panel
-                            else:
-                                #_LOGGER.warning(f"Client Not Found - Panel found {panel} but Client Not Found")
-                                raise ServiceValidationError(f"Client Not Found - Panel found {panel} but Client Not Found")
-                                return None, panel
-                    else:
-                        raise ServiceValidationError(f"Client Not Found - Entity does not have correct attributes")
-                else:
-                    raise ServiceValidationError(f"Client Not Found - Invalid Entity")
-        #_LOGGER.warning(f"Client Not Found")
-        raise ServiceValidationError(f"Client Not Found")
-        return None, None
+        if isinstance(call.data, dict) and ATTR_ENTITY_ID in call.data:
+            eid = str(call.data[ATTR_ENTITY_ID])
+            if not valid_entity_id(eid):
+                raise ServiceValidationError("Client Not Found - Invalid Entity")
+
+            # Primary lookup via EntityRegistry (resilient to entity_id renames and unavailable states)
+            entity_registry = er.async_get(hass)
+            reg_entry = entity_registry.async_get(eid)
+            if reg_entry is not None and reg_entry.platform == DOMAIN and reg_entry.config_entry_id:
+                cfg_entry = hass.config_entries.async_get_entry(reg_entry.config_entry_id)
+                if cfg_entry is not None and getattr(cfg_entry, "runtime_data", None) is not None:
+                    client = cfg_entry.runtime_data.client
+                    if client is not None:
+                        return client, client.getPanelID()
+
+            # Fallback lookup via state attribute for backward compatibility
+            mybpstate = hass.states.get(eid)
+            if mybpstate is not None:
+                if PANEL_ATTRIBUTE_NAME in mybpstate.attributes:
+                    panel = mybpstate.attributes[PANEL_ATTRIBUTE_NAME]
+                    client = findClient(hass, panel)
+                    if client is not None:
+                        return client, panel
+                    raise ServiceValidationError(f"Client Not Found - Panel found {panel} but Client Not Found")
+            raise ServiceValidationError("Client Not Found - Entity does not have correct attributes")
+        raise ServiceValidationError("Client Not Found")
 
     async def async_service_panel_eventlog(call):
         """Handler for event log service"""
