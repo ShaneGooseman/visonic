@@ -60,7 +60,7 @@ try:
                           AlAlarmType, AlSensorCondition, AlCommandStatus, AlX10Command, AlCondition, AlPanelInterface, AlSensorDevice, 
                           AlLogPanelEvent, AlSensorType, AlSwitchDevice, TEXT_PANEL_MODEL, TEXT_POWER_MASTER)
     from .pyenum import EVENT_TYPE, EventDataEnum
-except:
+except ImportError:
     from pyconst import (AlIntEnum, NO_DELAY_SET, PanelConfig, AlPanelMode, AlPanelCommand, AlPanelStatus, AlTroubleType, AlPanelEventData,
                          AlAlarmType, AlSensorCondition, AlCommandStatus, AlX10Command, AlCondition, AlPanelInterface, AlSensorDevice, 
                          AlLogPanelEvent, AlSensorType, AlSwitchDevice, TEXT_PANEL_MODEL, TEXT_POWER_MASTER)

@@ -85,12 +85,10 @@ import collections
 import time
 import math
 import io
-import socket
 import random
 import traceback
 
 from collections import namedtuple
-from time import sleep
 from enum import StrEnum, IntEnum, Enum, auto, unique
 from string import punctuation
 from textwrap import wrap
@@ -103,7 +101,7 @@ try:
     from .pyhelper import (toString, MyChecksumCalc, AlImageManager, ImageRecord, titlecase, AlPanelInterfaceHelper, 
                            AlSensorDeviceHelper, AlSwitchDeviceHelper)
     from .pyeprom import EPROMManager
-except:
+except ImportError:
     from pyenum import (CFG, RAW, SEQUENCE, PanelSetting, MessagePriority, DataType, IndexName, Packet, B0SubType, EPROM, Send, Receive, PanelTypeEnum, EVENT_TYPE, PANEL_STATUS)
     from pyconst import (AlPanelDataStream, NO_DELAY_SET, PanelConfig, AlConfiguration, AlPanelMode, AlPanelCommand, AlTroubleType, AlPanelEventData, EPROM_DOWNLOAD_ALL,
                           AlAlarmType, AlPanelStatus, AlSensorCondition, AlCommandStatus, AlX10Command, AlCondition, AlLogPanelEvent, AlSensorType, AlDeviceType, AlTerminationType, PE_PARTITION, NOBYPASSSTR, DISABLE_TEXT,

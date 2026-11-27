@@ -196,174 +196,13 @@ def convertByteArray(s) -> bytearray:
     return bytearray.fromhex(s)
 
 
-##############################################################################################################################################################################################################################################
-##########################  Panel Event coordinator to manage A5, B0.24 and A7 panel state and event data ####################################################################################################################################
-##############################################################################################################################################################################################################################################
-
-class PanelEventCoordinator:
-    
-    def __init__(self, loop, callbackSender, ispm = False, logstate_debug = None):
-        if logstate_debug is None:
-            self.logstate_debug = self._dummy
-        else:
-            self.logstate_debug = logstate_debug
-        if callbackSender is None:
-            self.callbackSender = self._dummy
-        else:
-            self.callbackSender = callbackSender
-        self.logstate_debug(f"[EC] Starting")
-        self.loop = loop
-        self.isPowerMaster = ispm
-        self._init_vars()
-
-    def _init_vars(self):
-        self.EventTime = 0
-        self.EventName = 0
-        self.EventAction = -100
-        self.EventPartition = None
-        self._event_timer_task = None
-        self.timerAlreadySent = True
-
-    def close(self):
-        try:
-            if self._event_timer_task is not None:
-                self._event_timer_task.cancel()
-            self._init_vars()
-        except Exception as ex:
-            # Do not cause a full Home Assistant Exception, keep it local here
-            self.logstate_debug("[PanelEventCoordinator]     Close Caused an exception")
-            self.logstate_debug(f"             {ex}")
-
-    def _dummy(self, msg, *args, **kwargs):
-        pass
-
-    def _sendData(self):
-        if self.EventAction >= 0:
-            d = self._convert()
-            self.logstate_debug(f"[EC] sending panel update {self.EventName=} {self.EventAction=} as data {d}")
-            self.callbackSender(AlCondition.PANEL_UPDATE, d)
-        else:
-            self.logstate_debug(f"[EC] _sendData wont send blank data")
-
-    def _convert(self) -> dict:
-        from . import pmLogEvent_t, pmLogPowerMaxUser_t, pmLogPowerMasterUser_t
-        d = {}
-        # Set the name
-        d[PE_NAME] = "Unknown"
-        if self.isPowerMaster:
-            d[PE_NAME] = pmLogPowerMasterUser_t[self.EventName] or "Unknown"
-        else:
-            d[PE_NAME] = pmLogPowerMaxUser_t[int(self.EventName & 0x7F)] or "Unknown"
-        # Set the event
-        d[PE_EVENT] = "Unknown"
-        if 0 <= self.EventAction <= 151:
-            if len(pmLogEvent_t[self.EventAction]) > 0:
-                d[PE_EVENT] = pmLogEvent_t[self.EventAction]
-        # Set the time
-        d[PE_TIME] = self.EventTime
-        if self.EventPartition is not None:
-            d[PE_PARTITION] = self.EventPartition
-        return d
-
-    async def _event_timer(self):
-        self.timerAlreadySent = False
-        #self.logstate_debug(f"[EC] _event_timer started")
-        await asyncio.sleep(0.4)
-        #self.logstate_debug(f"[EC] _event_timer expired")
-        self._sendData()
-        self.timerAlreadySent = True
-    
-    def _send_and_replace(self, data : dict):
-        if self._event_timer_task is not None:
-            #self.logstate_debug("[EC] Cancelling _event_timer_task")
-            try:
-                self._event_timer_task.cancel()
-            except Exception as ex:
-                # Do not cause a full Home Assistant Exception, keep it local here
-                self.logstate_debug("[_send_and_replace]     Caused an exception")
-                self.logstate_debug(f"             {ex}")
-        # send existing data
-        if not self.timerAlreadySent:
-            self._sendData()
-        # save new data
-        self.EventName = data[PE_NAME]
-        self.EventAction = data[PE_EVENT]
-        self.EventTime = data[PE_TIME]
-        self.EventPartition = data[PE_PARTITION] if PE_PARTITION in data else None
-        self.logstate_debug(f"[EC] _send_and_replace {data}     partition = {self._convert()[PE_PARTITION] if self.EventPartition is not None else "Not set as it is a panel"}    " + 
-                 f"name = {self._convert()[PE_NAME]}    event = {self._convert()[PE_EVENT]}")  # e.g. {'name': 0, 'event': 28, 'time': '04/10/2024, 22:46:04'}
-        self._event_timer_task = self.loop.create_task(self._event_timer())
-    
-    def addEvent(self, pm, data : dict) -> bool:
-        self.isPowerMaster = pm
-        if data is not None:
-            #self.logstate_debug(f"[EC] addEvent {data}")
-            
-            if self.EventAction != data[PE_EVENT]:
-                # If the action is not the same
-                self._send_and_replace(data)
-                return True
-            else:
-                # If the action is the same
-                if self.EventName == data[PE_NAME]:   # exactly the same event as last time then do not send it
-                    # Name is exactly the same as what we already have
-                    #self.logstate_debug(f"[EC] Panel event data {data} is the same as last time so not sending event")
-                    return
-                if self.EventName != 0 and data[PE_NAME] == 0:
-                    # Existing Name is better than new one
-                    self.logstate_debug(f"[EC] Panel event data {data} is the same Event but I already have a better name")
-                    return False
-                if self.EventName == 0 and data[PE_NAME] != 0:
-                    # The existing name is 0 (i.e. system) and the new name is better so replace it
-                    self.logstate_debug(f"[EC] Replacing 'system' with {data[PE_NAME]} but keeping original time {self.EventTime}")
-                    self.EventName = data[PE_NAME]
-                    #self.EventTime = data[PE_TIME]
-                # Here when the existing name and the new name are different and both non-zero
-                #   Send the previous and replace with the new
-                self._send_and_replace(data)
-                return True
-        return False
-
-# This class joins the Protocol data stream to the visonic protocol handler.
-class ClientVisonicProtocol(asyncio.Protocol):
-
-    def __init__(self, vp : VisonicProtocol, client: VisonicClient):
-        #super().__init__(*args, **kwargs)
-        #_LOGGER.debug(f"[ClientVisonicProtocol] Init")
-        self._transport : asyncio.Transport | None = None
-        self.vp: VisonicProtocol = vp
-        self.client: VisonicClient = client
-
-    def data_received(self, data):
-        #_LOGGER.debug(f"Received Data {data}")
-        if self.vp is not None and self._transport is not None:
-            self.vp.data_received(data)
-
-    def connection_made(self, transport: asyncio.Transport):
-        p = transport.get_protocol()
-        if self.client is None or self.client.visonicProtocol is not self.vp or p is not self:
-            _LOGGER.debug("[ClientVisonicProtocol] connection_made for an orphaned protocol, closing transport")
-            transport.close()
-            return
-        _LOGGER.debug(f"[ClientVisonicProtocol] connection_made Whooooo")
-        self._transport = transport
-        self.vp.setTransportConnection(self._transport)
-
-    def connection_lost(self, exc):
-        self.vp.setTransportConnection(None)
-        if self.client is not None:
-            _LOGGER.debug(f"[ClientVisonicProtocol] connection_lost Booooo, stopping transport and calling client handler")
-            self.client.connection_lost(exc)
-        self.client = None
-        self._transport = None
-
-    def close(self):
-        # set it to None here so that the connection_lost does not call the callback
-        self.client = None
-        if self._transport is not None:
-            _LOGGER.debug("[ClientVisonicProtocol] protocol closing down => closing transport")
-            self._transport.close()
-        self._transport = None
+from .event_coordinator import PanelEventCoordinator
+from .event_log import resolve_allowed_log_path, write_panel_event_log_files
+from .transport import (
+    ClientVisonicProtocol,
+    async_create_tcp_connection,
+    async_create_usb_connection,
+)
 
 class VisonicClient:
     """Set up for Visonic devices."""
@@ -701,68 +540,12 @@ class VisonicClient:
         else:
             self.logstate_warning("Client command processing not defined - is there a panel connection?")
 
-    def _resolve_allowed_log_path(self, filename: str) -> str | None:
-        """Resolve a log file path and ensure it stays within the Home Assistant config directory."""
-        from pathlib import Path
-
-        if not filename:
-            return None
-        base_dir = Path(self.hass.config.config_dir).resolve()
-        candidate = Path(filename)
-        resolved = (candidate if candidate.is_absolute() else base_dir / candidate).resolve()
-        try:
-            resolved.relative_to(base_dir)
-        except ValueError:
-            _LOGGER.warning("Panel Event Log - Refusing to write outside config directory: %s", filename)
-            return None
-        return str(resolved)
-
-    def _savePanelEventLogFiles(self, available: int, total: int, templatedata, csvdata: str | None, xml_path: str | None, csv_path: str | None, config_path: str, add_csv_title: bool) -> list[str]:
-        """Write panel event log files in an executor thread. Returns error notifications to emit."""
-        errors: list[str] = []
-        try:
-            if xml_path is not None:
-                try:
-                    file_loader = FileSystemLoader(
-                        [
-                            config_path + "/templates",
-                            config_path + "/xml",
-                            config_path + "/www",
-                            config_path,
-                        ],
-                        followlinks=False,
-                    )
-                    env = Environment(loader=file_loader)
-                    template = env.get_template(TEXT_XML_LOG_FILE_TEMPLATE)
-                    output = template.render(
-                        entries=templatedata,
-                        total=total,
-                        available=f"{available}",
-                    )
-                    with open(xml_path, "w", encoding="utf-8") as f:
-                        f.write(output.rstrip())
-                except (IOError, AttributeError, TypeError):
-                    errors.append("Panel Event Log - Failed to write XML file")
-
-            if csv_path is not None and csvdata is not None:
-                try:
-                    content = csvdata
-                    if add_csv_title:
-                        content = "current, total, partition, date, time, zone, event\n" + content
-                    with open(csv_path, "w", encoding="utf-8") as f:
-                        f.write(content.rstrip())
-                except (IOError, AttributeError, TypeError):
-                    errors.append("Panel Event Log - Failed to write CSV file")
-        except Exception:
-            errors.append("Panel Event Log - Failed to Create Valid Event Log Files")
-        return errors
-
     async def _async_save_panel_event_log_files(self, available: int, total: int, templatedata, csvdata: str | None) -> None:
         """Save panel event log files asynchronously without blocking the event loop."""
         xml_fn = self.config.get(CONF_LOG_XML_FN, "")
         csv_fn = self.config.get(CONF_LOG_CSV_FN, "")
-        xml_path = self._resolve_allowed_log_path(xml_fn) if len(xml_fn) > 0 else None
-        csv_path = self._resolve_allowed_log_path(csv_fn) if len(csv_fn) > 0 else None
+        xml_path = resolve_allowed_log_path(self.hass.config.config_dir, xml_fn) if len(xml_fn) > 0 else None
+        csv_path = resolve_allowed_log_path(self.hass.config.config_dir, csv_fn) if len(csv_fn) > 0 else None
 
         if len(xml_fn) > 0 and xml_path is None:
             self.createNotification(
@@ -776,7 +559,7 @@ class VisonicClient:
             )
 
         errors = await self.hass.async_add_executor_job(
-            self._savePanelEventLogFiles,
+            write_panel_event_log_files,
             available,
             total,
             templatedata,
@@ -784,6 +567,7 @@ class VisonicClient:
             xml_path,
             csv_path,
             self.hass.config.path(),
+            TEXT_XML_LOG_FILE_TEMPLATE,
             self.toBool(self.config.get(CONF_LOG_CSV_TITLE, False)),
         )
         for err_msg in errors:
@@ -2145,104 +1929,12 @@ class VisonicClient:
     # Create a connection using asyncio using an ip and port
     async def async_create_tcp_visonic_connection(self, vp : VisonicProtocol, address, port):
         """Create Visonic manager class, returns tcp transport coroutine."""
-
-        def createSocketConnection(address, port):
-            """Create the Socket Connection to the Device in the Panel (runs in executor thread)."""
-            sock = None
-            try:
-                _LOGGER.debug("Creating TCP Connection, Creating socket and setting socket options")
-
-                # Detect if the address is IPv6 (contains a colon)
-                if ":" in address:
-                    family = socket.AF_INET6
-                    timeout = 5.0         # timout longer as may take longer over v6 or thread networks
-                else:
-                    family = socket.AF_INET
-                    timeout = 1.0
-
-                # Create the socket using the detected family
-                sock = socket.socket(family, socket.SOCK_STREAM, socket.IPPROTO_TCP)
-
-                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-                sock.setblocking(1)   # Set blocking to on, this is the default but just make sure
-
-                # Connection Logic
-                sock.settimeout(timeout)
-
-                # sock.connect works for both v4 and v6 tuples
-                _LOGGER.debug("Creating TCP %s Connection", family.name)
-                sock.connect((address, port))
-
-                sock.settimeout(1.0) # Reset to original 1s timeout for flushing
-
-                # Flush the buffer, receive any data and dump it
-                try:
-                    sock.recv(10000)  # try to receive 10000 bytes
-                    _LOGGER.debug("Creating TCP Connection, Buffer Flushed and Received some data!")
-                except socket.timeout:  # fail after 1 second of no activity
-                    pass
-
-                # set the timeout to infinite
-                sock.settimeout(None)
-                # return the socket
-                return sock
-
-            except socket.error as err:
-                # Do not cause a full Home Assistant Exception, keep it local here
-                _LOGGER.debug("Setting TCP socket Options Exception %s", err)
-                if sock is not None:
-                    sock.close()
-
-            return None
-
-        try:
-            sock = await self.hass.async_add_executor_job(createSocketConnection, address, int(port))
-            if sock is not None:
-                _, protocol = await self.hass.loop.create_connection(
-                    lambda: ClientVisonicProtocol(vp=vp, client=self),
-                    sock=sock,
-                )
-                return protocol
-        except Exception as ex:
-            # Do not cause a full Home Assistant Exception, keep it local here
-            self.logstate_warning(f"Creating TCP Connection, TCP Connection Exception {ex}")
-        self.logstate_info(f"Creating TCP has a Connection problem, returning not-connected condition")
-            
-        return None
+        return await async_create_tcp_connection(self.hass, vp, self, address, port)
 
     # Create a connection using asyncio through a linux port (usb or rs232)
     async def async_create_usb_visonic_connection(self, vp : VisonicProtocol, path, baud):
         """Create Visonic manager class, returns rs232 transport coroutine."""
-
-        # setup serial connection
-        # use default protocol if not specified
-        protocol = partial(
-            ClientVisonicProtocol,
-            vp=vp,
-            client=self,
-        )
-
-        try:
-            # create the connection to the panel as an asyncio protocol handler and then set it up in a task
-            #await asyncio.sleep(20.0) 
-            self.logstate_debug(f"Creating USB Connection {path=} {baud=}")
-            _, proto = await create_serial_connection(
-                self.hass.loop,
-                protocol,
-                path,
-                baud,
-            )
-        except (aioesphomeapi.core.APIConnectionError, serialx.common.SerialException) as ex:
-            self.logstate_debug(f"    Failed to create it, connection error {ex}")
-        except Exception as ex:
-            # Do not cause a full Home Assistant Exception, keep it local here
-            self.logstate_warning(f"Creating USB Connection, USB Connection Exception {ex}")
-        else:
-            return proto
-
-        self.logstate_info(f"Creating USB Connection problem, returning not-connected condition")
-        return None
+        return await async_create_usb_connection(self.hass, vp, self, path, baud)
 
     async def _async_connect_comms(self) -> bool:
         """Create the comms connection to the alarm panel."""

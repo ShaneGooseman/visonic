@@ -54,7 +54,7 @@ try:
     from .pyenum import (EPROM, PanelTypeEnum)
     from .pyconst import (PanelConfig, EPROM_DOWNLOAD_ALL, NOBYPASSSTR, DISABLE_TEXT)
     from .pyhelper import (toString)
-except:
+except ImportError:
     from pyenum import (EPROM, PanelTypeEnum)
     from pyconst import (PanelConfig, EPROM_DOWNLOAD_ALL, NOBYPASSSTR, DISABLE_TEXT)
     from pyhelper import (toString)
