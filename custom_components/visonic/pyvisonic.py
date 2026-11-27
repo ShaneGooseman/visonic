@@ -983,9 +983,10 @@ class VisonicListEntry:
 
     def __str__(self):
         if self.command is not None:
-            return f"Command:{self.command.msg}    Options:{self.options}"
+            opts = "OBFUSCATED" if OBFUS and self.options is not None else self.options
+            return f"Command:{self.command.msg}    Options:{opts}"
         elif self.raw is not None:
-            return f"Raw: {toString(self.raw)}"
+            return f"Raw: {'OBFUSCATED' if OBFUS else toString(self.raw)}"
         return "Command:None"
 
     def __lt__(self, other: object) -> bool:             # Implement < based on the creation time
@@ -3126,7 +3127,7 @@ class ProtocolBase(AlPanelInterfaceHelper, AlPanelDataStream, MyChecksumCalc):
                 self.pmCurrentPDU = self.pmCurrentPDU[data]
                 #log.debug("[data receiver] Building PDU:   doing it properly")
             else:
-                self.pmCurrentPDU = self.pmCurrentPDU[0]                     # All should have a 0 entry so use as default when unknown
+                self.pmCurrentPDU = self.pmCurrentPDU.get(0, pmReceiveMsg[0])
                 log.debug(f"[data receiver] Building PDU: It's a variable message {hex(self.ReceiveData[0]).upper()} {hex(data).upper()} BUT it is unknown")
             self.pmIncomingPduLen = self.pmCurrentPDU.length                 # for variable length messages this is the fixed length and will work with this algorithm until updated.
             self.ReceiveData.append(data)                                    # Add on the message type to the buffer
@@ -3547,9 +3548,9 @@ class PacketHandling(ProtocolBase):
                 # If the panel still has its startup default Download Code, or if it hasn't been set by the user to something different
                 self.DownloadCode = pmPanelConfig[CFG.DLCODE_1][self.PanelType]
                 self.PanelSettings[PanelSetting.PanelDownload] = self.DownloadCode
-                log.debug(f"[_set_data_from_panel_type] Setting Download Code from the Default value {DEFAULT_DL_CODE} to the default Panel Value {self.DownloadCode}")
+                log.debug(f"[_set_data_from_panel_type] Setting Download Code from the Default value {DEFAULT_DL_CODE} to the default Panel Value {self.DownloadCode if not OBFUS else 'OBFUSCATED'}")
             else:
-                log.debug(f"[_set_data_from_panel_type] Using Download Code {self.DownloadCode}")
+                log.debug(f"[_set_data_from_panel_type] Using Download Code {self.DownloadCode if not OBFUS else 'OBFUSCATED'}")
 
             if 0 <= self.PanelType <= len(pmPanelConfig[CFG.SUPPORTED]) - 1:
                 isSupported = pmPanelConfig[CFG.SUPPORTED][self.PanelType]
@@ -4887,7 +4888,7 @@ class PacketHandling(ProtocolBase):
                 self.DownloadCode = dat
                 self.DownloadCodeUserSet = True    # Set to True as the download code has been obtained directly from the panel so it mist be correct
                 self.PanelSettings[PanelSetting.PanelDownload] = self.DownloadCode
-                log.debug(f"[_extract_35_data]               Setting Download Code : {self.DownloadCode}")
+                log.debug(f"[_extract_35_data]               Setting Download Code : {self.DownloadCode if not OBFUS else 'OBFUSCATED'}")
 
         elif dataContent == 0x003C and datalen == 15 and isinstance(dat,str): # 8 is a string
             processed_data = True
@@ -5000,7 +5001,7 @@ class PacketHandling(ProtocolBase):
                 self.DownloadCode = dat
                 self.DownloadCodeUserSet = True    # Set to True as the download code has been obtained directly from the panel so it mist be correct
                 self.PanelSettings[PanelSetting.PanelDownload] = self.DownloadCode
-                log.debug(f"[_extract_42_data]               Setting Download Code : {self.DownloadCode}")
+                log.debug(f"[_extract_42_data]               Setting Download Code : {self.DownloadCode if not OBFUS else 'OBFUSCATED'}")
 
         elif dataContent == 0x003C and data_item_size == 15 and max_data_items == 1 and no_of_entries == 1 and isinstance(dat,str): #
             processed_data = True
@@ -5734,9 +5735,44 @@ class PacketHandling(ProtocolBase):
         """ MsgType=E1 - Visonic Proxy Command Ringback """
         log.info(f"Integration has received a proxy command ringback, this indicates that Rx and Tx are incorrectly connected. Are you testing Ringback?")
 
+    @staticmethod
+    def _get_jpeg_dimensions(buffer: bytes | bytearray) -> tuple[int, int] | None:
+        """Parse JPEG SOF marker to extract (width, height) without external dependencies."""
+        length = len(buffer)
+        if length < 4 or buffer[0] != 0xFF or buffer[1] != 0xD8:
+            return None
+        idx = 2
+        sof_markers = {
+            0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7,
+            0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF,
+        }
+        while idx < length:
+            while idx < length and buffer[idx] != 0xFF:
+                idx += 1
+            while idx < length and buffer[idx] == 0xFF:
+                idx += 1
+            if idx >= length:
+                return None
+            marker = buffer[idx]
+            idx += 1
+            if marker in (0xD8, 0x01) or (0xD0 <= marker <= 0xD7):
+                continue
+            if marker in (0xD9, 0xDA):
+                return None
+            if idx + 2 > length:
+                return None
+            seg_len = (buffer[idx] << 8) | buffer[idx + 1]
+            if seg_len < 2 or idx + seg_len > length:
+                return None
+            if marker in sof_markers and seg_len >= 7:
+                height = (buffer[idx + 3] << 8) | buffer[idx + 4]
+                width = (buffer[idx + 5] << 8) | buffer[idx + 6]
+                return (width, height)
+            idx += seg_len
+        return None
+
     def _handle_msgtypeF4(self, data) -> bool:  # Static JPG Image
         """ MsgType=F4 - Static JPG Image """
-        from PIL import Image, UnidentifiedImageError                        
 
         #log.debug(f"[handle_msgtypeF4]  data {toString(data)}")
 
@@ -5857,11 +5893,11 @@ class PacketHandling(ProtocolBase):
                         #           images 1 to 10 are sent first in order and are always good, 
                         #           image 11 (marked as image 0) is always corrupt and has lots more bytes than the other 10
                         #                I wonder if its a different image/video format --> But the PIL library doesn't recognise it
-                        try:
-                            img = Image.open(io.BytesIO(buffer))
-                            width, height = img.size
-                        except Exception as ex:
-                            log.debug(f"Image Exception {ex}")
+                        dims = self._get_jpeg_dimensions(buffer)
+                        if dims is not None:
+                            width, height = dims
+                        else:
+                            log.debug("Image Exception: invalid or corrupt JPEG header")
 
                         total = 0
                         for b in buffer:
@@ -6144,7 +6180,7 @@ class VisonicProtocol(PacketHandling):
             CS = self._calculateCRC(PM_Data)   # returns a bytearray with a single byte
             To_Send = bytearray([Packet.HEADER]) + PM_Data + CS + bytearray([Packet.FOOTER])
 
-            log.debug(f"[_createBypassB0Message] Returning {toString(To_Send)}")
+            log.debug(f"[_createBypassB0Message] Returning {'OBFUSCATED' if OBFUS else toString(To_Send)}")
             return To_Send
 
         if not self.pmDownloadMode:

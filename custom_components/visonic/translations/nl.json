@@ -6,7 +6,8 @@
 			"device_error": "Apparaat moet Ethernet of USB zijn",
 			"emulation_mode_error": "Onjuiste instelling voor emulatiemodus",
 			"settings_missing": "Instellingen importeren uit yaml-bestand, maar essentiële instellingen ontbreken",
-			"editing": "Bedankt voor uw bewerkingen"
+			"editing": "Bedankt voor uw bewerkingen",
+			"cannot_connect_refused": "Verbinding geweigerd. Is de ESPHome Stream Server actief?"
 		},
 		"error": {
 			"eth_or_usb": "Moet Ethernet of USB zijn",

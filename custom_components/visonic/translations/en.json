@@ -6,7 +6,8 @@
             "device_error": "Device must be either Ethernet or USB",
             "emulation_mode_error": "Incorrect Emulation Mode Setting",
             "settings_missing": "Import setting from yaml file but essential settings are missing",
-            "editing": "Thankyou for your edits"
+            "editing": "Thankyou for your edits",
+            "cannot_connect_refused": "Connection refused. Is the ESPHome Stream Server active?"
         },
         "error": {
             "eth_or_usb": "Must be one of Ethernet or USB",

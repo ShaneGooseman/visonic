@@ -2,9 +2,9 @@
 
 from typing import Any
 from copy import deepcopy
+import asyncio
 import logging
 import voluptuous as vol
-import socket
 
 from .const import (
     CONF_DEVICE_BAUD,
@@ -58,28 +58,30 @@ TRANSLATE_ERROR_UNKNOWN = "unknown"
 TRANSLATE_ERROR_CONNECTION_TIMEOUT = "cannot_connect_timeout"
 TRANSLATE_ERROR_CONNECTION_REFUSED = "cannot_connect_refused"
 
-def validate_ethernet_connection(host: str, port: int) -> str:
-    """Attempt to open a socket to the ethernet/thread device. Returns error key or None."""
+async def async_validate_ethernet_connection(host: str, port: int | str) -> str | None:
+    """Attempt to open an async TCP connection to the ethernet/thread device. Returns error key or None."""
+    writer = None
     try:
-        # Detect family
-        family = socket.AF_INET6 if ":" in host else socket.AF_INET
-
-        _LOGGER.debug(f"Validate_ethernet_connection, family {family.name}   host {host}   port {port}")
-        
-        # We use a short 3s timeout for the UI check to keep it snappy
-        sock = socket.socket(family, socket.SOCK_STREAM)
-        sock.settimeout(3.0)
-        
-        # Attempt the connection
-        sock.connect((host, int(port)))
-        sock.close()
+        port_int = int(port)
+        _LOGGER.debug(f"async_validate_ethernet_connection, host {host}   port {port_int}")
+        _, writer = await asyncio.wait_for(
+            asyncio.open_connection(host, port_int),
+            timeout=3.0,
+        )
         return None  # Success!
-        
-    except socket.timeout:
-        return TRANSLATE_ERROR_CONNECTION_TIMEOUT
-    except socket.error:
+    except (ValueError, TypeError):
         return TRANSLATE_ERROR_CONNECTION_REFUSED
-    return TRANSLATE_ERROR_UNKNOWN
+    except TimeoutError:
+        return TRANSLATE_ERROR_CONNECTION_TIMEOUT
+    except OSError:
+        return TRANSLATE_ERROR_CONNECTION_REFUSED
+    finally:
+        if writer is not None:
+            writer.close()
+            try:
+                await writer.wait_closed()
+            except OSError:
+                pass
 
 
 class MyHandlers(data_entry_flow.FlowHandler):
@@ -313,7 +315,7 @@ class VisonicConfigFlow(ConfigFlow, MyHandlers, domain=DOMAIN):
             if not errors:
                 host = user_input.get(CONF_HOST, "")
                 port = user_input.get(CONF_PORT, "0")
-                error_key = validate_ethernet_connection(host, int(port))
+                error_key = await async_validate_ethernet_connection(host, port)
                 
                 if error_key is None:
                     self.config.update(user_input)
@@ -414,7 +416,7 @@ class VisonicConfigFlow(ConfigFlow, MyHandlers, domain=DOMAIN):
         if user_input is not None:
             _LOGGER.debug(f"[async_step_zeroconf_confirm] Start")
             # This check should always pass because the device has sent us its IP address
-            if validate_ethernet_connection(self.config[CONF_HOST], int(self.config[CONF_PORT])) is not None:
+            if await async_validate_ethernet_connection(self.config[CONF_HOST], self.config[CONF_PORT]) is not None:
                 _LOGGER.debug(f"[async_step_zeroconf_confirm] Aborting - TRANSLATE_ERROR_CONNECTION_REFUSED")
                 return self.async_abort(reason=TRANSLATE_ERROR_CONNECTION_REFUSED)
 

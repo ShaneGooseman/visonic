@@ -6,7 +6,8 @@
             "device_error": "Errore: il dispositivo deve essere Ethernet o USB",
             "emulation_mode_error": "Errore: impostazione modalit\u00E0 emulazione non corretta",
             "settings_missing": "Errore: importazione impostazioni dal file yaml ma mancano impostazioni essenziali",
-            "editing": "Grazie per le modifiche"
+            "editing": "Grazie per le modifiche",
+            "cannot_connect_refused": "Connessione rifiutata. Il server ESPHome \u00e8 attivo?"
         },
         "error": {
             "eth_or_usb": "Deve essere Ethernet o USB",

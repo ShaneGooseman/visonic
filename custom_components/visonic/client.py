@@ -680,75 +680,98 @@ class VisonicClient:
         else:
             self.logstate_warning("Client command processing not defined - is there a panel connection?")
 
-    def _savePanelEventLogFiles(self, available, total):
-        # create a new XML file with the results
+    def _resolve_allowed_log_path(self, filename: str) -> str | None:
+        """Resolve a log file path and ensure it stays within the Home Assistant config directory."""
+        from pathlib import Path
+
+        if not filename:
+            return None
+        base_dir = Path(self.hass.config.config_dir).resolve()
+        candidate = Path(filename)
+        resolved = (candidate if candidate.is_absolute() else base_dir / candidate).resolve()
         try:
-            if len(self.config.get(CONF_LOG_XML_FN, "")) > 0:
+            resolved.relative_to(base_dir)
+        except ValueError:
+            _LOGGER.warning("Panel Event Log - Refusing to write outside config directory: %s", filename)
+            return None
+        return str(resolved)
+
+    def _savePanelEventLogFiles(self, available: int, total: int, templatedata, csvdata: str | None, xml_path: str | None, csv_path: str | None, config_path: str, add_csv_title: bool) -> list[str]:
+        """Write panel event log files in an executor thread. Returns error notifications to emit."""
+        errors: list[str] = []
+        try:
+            if xml_path is not None:
                 try:
-                    self.logstate_debug(
-                        "Panel Event Log - Starting xml save filename %s   file loader path %s",
-                        str(self.config.get(CONF_LOG_XML_FN)),
-                        str(self.hass.config.path()),
-                    )
                     file_loader = FileSystemLoader(
                         [
-                            self.hass.config.path() + "/templates",
-                            self.hass.config.path() + "/xml",
-                            self.hass.config.path() + "/www",
-                            self.hass.config.path(),
+                            config_path + "/templates",
+                            config_path + "/xml",
+                            config_path + "/www",
+                            config_path,
                         ],
-                        followlinks=True,
+                        followlinks=False,
                     )
                     env = Environment(loader=file_loader)
-                    self.logstate_debug("Panel Event Log - Setting up xml - getting the template")
                     template = env.get_template(TEXT_XML_LOG_FILE_TEMPLATE)
                     output = template.render(
-                        entries=self.templatedata,
+                        entries=templatedata,
                         total=total,
                         available=f"{available}",
                     )
-                    with open(self.config.get(CONF_LOG_XML_FN), "w") as f:
-                        self.logstate_debug("Panel Event Log - Writing xml file")
+                    with open(xml_path, "w", encoding="utf-8") as f:
                         f.write(output.rstrip())
-                        self.logstate_debug("Panel Event Log - Closing xml file")
-                        f.close()
                 except (IOError, AttributeError, TypeError):
-                    self.createNotification(
-                        AvailableNotifications.EVENTLOG_PROBLEM,
-                        "Panel Event Log - Failed to write XML file"
-                    )
+                    errors.append("Panel Event Log - Failed to write XML file")
 
-            if len(self.config.get(CONF_LOG_CSV_FN, "")) > 0:
+            if csv_path is not None and csvdata is not None:
                 try:
-                    self.logstate_debug(
-                        "Panel Event Log - Starting csv save filename %s",
-                        self.config.get(CONF_LOG_CSV_FN),
-                    )
-                    if self.toBool(self.config.get(CONF_LOG_CSV_TITLE, False)):
-                        self.logstate_debug("Panel Event Log - Adding header to string")
-                        self.csvdata = "current, total, partition, date, time, zone, event\n" + self.csvdata
-                    self.logstate_debug("Panel Event Log - Opening csv file")
-                    with open(self.config.get(CONF_LOG_CSV_FN), "w") as f:
-                        self.logstate_debug("Panel Event Log - Writing csv file")
-                        f.write(self.csvdata.rstrip())
-                        self.logstate_debug("Panel Event Log - Closing csv file")
-                        f.close()
+                    content = csvdata
+                    if add_csv_title:
+                        content = "current, total, partition, date, time, zone, event\n" + content
+                    with open(csv_path, "w", encoding="utf-8") as f:
+                        f.write(content.rstrip())
                 except (IOError, AttributeError, TypeError):
-                    self.createNotification(
-                        AvailableNotifications.EVENTLOG_PROBLEM,
-                        "Panel Event Log - Failed to write CSV file"
-                    )
+                    errors.append("Panel Event Log - Failed to write CSV file")
         except Exception:
-            # Do not cause a full Home Assistant Exception, keep it local here, just create a notification if its enabled
+            errors.append("Panel Event Log - Failed to Create Valid Event Log Files")
+        return errors
+
+    async def _async_save_panel_event_log_files(self, available: int, total: int, templatedata, csvdata: str | None) -> None:
+        """Save panel event log files asynchronously without blocking the event loop."""
+        xml_fn = self.config.get(CONF_LOG_XML_FN, "")
+        csv_fn = self.config.get(CONF_LOG_CSV_FN, "")
+        xml_path = self._resolve_allowed_log_path(xml_fn) if len(xml_fn) > 0 else None
+        csv_path = self._resolve_allowed_log_path(csv_fn) if len(csv_fn) > 0 else None
+
+        if len(xml_fn) > 0 and xml_path is None:
             self.createNotification(
                 AvailableNotifications.EVENTLOG_PROBLEM,
-                "Panel Event Log - Failed to Create Valid Event Log Files"
+                "Panel Event Log - XML path is outside the Home Assistant config directory",
             )
-#                self._exc_info = sys.exc_info()
-        finally:
-            # Ensure that these are set back to None to indicate not collecting data so we can start again
-            self.csvdata = None
-            self.templatedata = None
+        if len(csv_fn) > 0 and csv_path is None:
+            self.createNotification(
+                AvailableNotifications.EVENTLOG_PROBLEM,
+                "Panel Event Log - CSV path is outside the Home Assistant config directory",
+            )
+
+        errors = await self.hass.async_add_executor_job(
+            self._savePanelEventLogFiles,
+            available,
+            total,
+            templatedata,
+            csvdata,
+            xml_path,
+            csv_path,
+            self.hass.config.path(),
+            self.toBool(self.config.get(CONF_LOG_CSV_TITLE, False)),
+        )
+        for err_msg in errors:
+            self.createNotification(AvailableNotifications.EVENTLOG_PROBLEM, err_msg)
+
+        if self.toBool(self.config.get(CONF_LOG_DONE, False)):
+            self.logstate_debug("Panel Event Log - Firing Completion Event")
+            self._fireHAEvent(event_id = PanelCondition.PANEL_LOG_COMPLETE, datadictionary = {"total": total, "available": available})
+        self.logstate_debug("Panel Event Log - Complete")
 
     def process_panel_event_log(self, entry: AlLogPanelEvent):
         """Process a sequence of panel log events."""
@@ -846,14 +869,16 @@ class VisonicClient:
                 if reverse:
                     self.templatedata.reverse()
 
-                x = threading.Thread(target=self._savePanelEventLogFiles, args=(entry.total, total), name=f"VisonicSaveEventLog{self.getPanelID()}",)
-                x.start()
-                x.join()
+                templatedata_snapshot = self.templatedata
+                csvdata_snapshot = self.csvdata
+                self.csvdata = None
+                self.templatedata = None
 
-                if self.toBool(self.config.get(CONF_LOG_DONE, False)):
-                    self.logstate_debug("Panel Event Log - Firing Completion Event")
-                    self._fireHAEvent(event_id = PanelCondition.PANEL_LOG_COMPLETE, datadictionary = {"total": total, "available": entry.total})
-                self.logstate_debug("Panel Event Log - Complete")
+                self.hass.async_create_task(
+                    self._async_save_panel_event_log_files(
+                        entry.total, total, templatedata_snapshot, csvdata_snapshot
+                    )
+                )
 
     # This is not called from anywhere, use it for debug purposes and/or to clear all entities from HA
     def printAllEntities(self, delete_as_well : bool = False):
@@ -1750,7 +1775,8 @@ class VisonicClient:
             code = call.data[ATTR_CODE]
             # If the code is defined then it must be a 4 digit string
             if len(code) > 0 and not re.search(PIN_REGEX, code):
-                code = "0000"
+                self._generateBusEventReason(cond, AlCommandStatus.FAIL_INVALID_CODE, message, f"{message} Request")
+                return False, ""
         pcode = self.decode_code_from_dict_or_str(code)
         isValidPL, code = self.pmGetPinSimple(code = pcode)
         if isValidPL:
@@ -1933,7 +1959,8 @@ class VisonicClient:
             if (codeRequired and code is not None) or not codeRequired:
                 pcode = self.decode_code_from_dict_or_str(code) if codeRequired or (code is not None and len(code) > 0) else ""
                 if self.visonicProtocol is not None:
-                    isValidPL, code, _, _ = self.pmGetPin(code = pcode, partition = 1)
+                    target_partition = min(partitions) if partitions else 1
+                    isValidPL, code, _, _ = self.pmGetPin(code = pcode, partition = target_partition)
 
                     if command in [AlPanelCommand.DISARM, AlPanelCommand.ARM_HOME, AlPanelCommand.ARM_AWAY, AlPanelCommand.ARM_HOME_INSTANT, \
                                    AlPanelCommand.ARM_AWAY_INSTANT, AlPanelCommand.ARM_HOME_BYPASS, AlPanelCommand.ARM_AWAY_BYPASS]:
@@ -2077,10 +2104,10 @@ class VisonicClient:
         """Create Visonic manager class, returns tcp transport coroutine."""
 
         def createSocketConnection(address, port):
-            """Create the Socket Connection to the Device in the Panel"""
+            """Create the Socket Connection to the Device in the Panel (runs in executor thread)."""
+            sock = None
             try:
-                #self.logstate_debug(f"Setting TCP socket Options {address} {port}")
-                self.logstate_debug("Creating TCP Connection, Creating socket and setting socket options")
+                _LOGGER.debug("Creating TCP Connection, Creating socket and setting socket options")
 
                 # Detect if the address is IPv6 (contains a colon)
                 if ":" in address:
@@ -2098,45 +2125,36 @@ class VisonicClient:
                 sock.setblocking(1)   # Set blocking to on, this is the default but just make sure
 
                 # Connection Logic
-                sock.settimeout(timeout) 
+                sock.settimeout(timeout)
 
                 # sock.connect works for both v4 and v6 tuples
-                self.logstate_debug(f"Creating TCP {family.name} Connection to {address}")
+                _LOGGER.debug("Creating TCP %s Connection", family.name)
                 sock.connect((address, port))
 
                 sock.settimeout(1.0) # Reset to original 1s timeout for flushing
 
-                #sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
-                #sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                #sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-                #sock.setblocking(1)  # Set blocking to on, this is the default but just make sure
-                #sock.settimeout(1.0)  # set timeout to 1 second to flush the receive buffer
-                #self.logstate_debug("Creating TCP Connection, Making Connection")
-                #sock.connect((address, port))
-
                 # Flush the buffer, receive any data and dump it
                 try:
-                    dummy = sock.recv(10000)  # try to receive 10000 bytes
-                    self.logstate_debug("Creating TCP Connection, Buffer Flushed and Received some data!")
+                    sock.recv(10000)  # try to receive 10000 bytes
+                    _LOGGER.debug("Creating TCP Connection, Buffer Flushed and Received some data!")
                 except socket.timeout:  # fail after 1 second of no activity
-                    #self.logstate_debug("Buffer Flushed and Didn't receive data! [Timeout]")
                     pass
 
                 # set the timeout to infinite
                 sock.settimeout(None)
                 # return the socket
                 return sock
-                
+
             except socket.error as err:
                 # Do not cause a full Home Assistant Exception, keep it local here
-                self.logstate_debug(f"Setting TCP socket Options Exception {err}")
+                _LOGGER.debug("Setting TCP socket Options Exception %s", err)
                 if sock is not None:
                     sock.close()
 
             return None
 
         try:
-            sock = createSocketConnection(address, int(port))
+            sock = await self.hass.async_add_executor_job(createSocketConnection, address, int(port))
             if sock is not None:
                 _, protocol = await self.hass.loop.create_connection(
                     lambda: ClientVisonicProtocol(vp=vp, client=self),

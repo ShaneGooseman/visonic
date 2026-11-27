@@ -10,7 +10,7 @@ import serialx
 import voluptuous as vol
 import collections
 from collections import namedtuple
-from .config_flow import validate_ethernet_connection
+from .config_flow import async_validate_ethernet_connection
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant, ServiceValidationError, valid_entity_id, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.exceptions import ConfigEntryNotReady
@@ -564,7 +564,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: VisonicConfigEntry) -> b
     elif device_type == DEVICE_TYPE_ETHERNET:
         host = entry.data.get(CONF_HOST, "")
         port = entry.data.get(CONF_PORT, "")
-        if validate_ethernet_connection(host, port) is not None: # not None means an error
+        if await async_validate_ethernet_connection(host, port) is not None: # not None means an error
             raise ConfigEntryNotReady("Ethernet connection not ready, cannot continue")
 
     if not translatedLanguageAlready:

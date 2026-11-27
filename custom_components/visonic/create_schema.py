@@ -184,9 +184,11 @@ class VisonicSchema:
                 default=self.create_default(options, CONF_EMULATION_MODE, available_emulation_modes[0]),
             ): vol.In(available_emulation_modes),
             vol.Optional(
-                CONF_DOWNLOAD_CODE, 
-                default=self.create_default(options, CONF_DOWNLOAD_CODE, "")
-            ): str,
+                CONF_DOWNLOAD_CODE,
+                default=self.create_default(options, CONF_DOWNLOAD_CODE, ""),
+            ): selector.TextSelector(
+                selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)
+            ),
             vol.Optional(
                 CONF_EPROM_ATTRIBUTES,
                 default=self.create_default(options, CONF_EPROM_ATTRIBUTES, False),
