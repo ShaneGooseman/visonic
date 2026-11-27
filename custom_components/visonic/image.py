@@ -50,7 +50,7 @@ class VisonicImage(ImageEntity):
         self._attr_content_type = "image/jpeg"
         self._attr_should_poll = False
         self._visonic_device = visonic_device
-        self._visonic_device.onChange(self.onChange)
+        self._unsub_device = self._visonic_device.onChange(self.onChange)
         dname = visonic_device.createFriendlyName()
         pname = client.getMyString()
         self._name = str(pname + dname).lower()
@@ -66,7 +66,11 @@ class VisonicImage(ImageEntity):
     async def async_will_remove_from_hass(self):
         """Remove from hass."""
         _LOGGER.debug(f"[async_will_remove_from_hass] id = {self.unique_id}")
+        if self._unsub_device is not None:
+            self._unsub_device()
+            self._unsub_device = None
         self._visonic_device = None
+        self._sensor_image = None
         self._is_available = False
         await super().async_will_remove_from_hass()
 
@@ -84,9 +88,9 @@ class VisonicImage(ImageEntity):
                     _LOGGER.debug("[onChange] updating image")
                     self._sensor_image = self._visonic_device.jpg_data
                     self._attr_image_last_updated = self._visonic_device.jpg_time
-                    # Ask HA to schedule an update
+                    # Ask HA to write the updated state
                     if self.hass is not None and self.entity_id is not None:
-                        self.schedule_update_ha_state()
+                        self.async_write_ha_state()
         else:
             _LOGGER.debug("changeHandler: image on change called but sensor is not defined")
 
@@ -95,7 +99,8 @@ class VisonicImage(ImageEntity):
         """Return the state attributes of the device."""
         attr = {}
         attr[PANEL_ATTRIBUTE_NAME] = self._panel
-        attr[DEVICE_ATTRIBUTE_NAME] = self._visonic_device.getDeviceID()
+        if self._visonic_device is not None:
+            attr[DEVICE_ATTRIBUTE_NAME] = self._visonic_device.getDeviceID()
         return attr
 
     async def async_image(self) -> bytes | None:

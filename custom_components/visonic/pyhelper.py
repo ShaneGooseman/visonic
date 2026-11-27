@@ -402,14 +402,20 @@ class AlSensorDeviceHelper(AlSensorDevice):
     def onChange(self, callback : Callable = None):
         if callback is None:
             self._callback = []
-        else:
-            self._callback.append(callback)
+            return None
+        self._callback.append(callback)
+        def _unsubscribe():
+            try:
+                self._callback.remove(callback)
+            except ValueError:
+                pass
+        return _unsubscribe
 
     def getPartition(self):
         return self.partition
 
     def pushChange(self, s : AlSensorCondition):
-        for cb in self._callback:
+        for cb in list(self._callback):
             cb(self, s)
 
     def getDeviceID(self):
@@ -663,11 +669,17 @@ class AlSwitchDeviceHelper(AlSwitchDevice):
         if callback is None:
             # If any call is None then completely clear the list
             self._callback = []
-        else:
-            self._callback.append(callback)
+            return None
+        self._callback.append(callback)
+        def _unsubscribe():
+            try:
+                self._callback.remove(callback)
+            except ValueError:
+                pass
+        return _unsubscribe
 
     def pushChange(self):
-        for cb in self._callback:
+        for cb in list(self._callback):
             cb(self)
 
     def getDeviceID(self):
@@ -1172,6 +1184,7 @@ class PartitionStateClass:
                 self.SirenActive = False
                 self.SirenActiveDeviceTrigger = None
                 self.PanelIntruderStatus = False
+                self.stopIntruderStateTimer()
 
         return retval
     
@@ -1232,9 +1245,10 @@ class AlPanelInterfaceHelper(AlPanelInterface):
         log = loggy
 
     def shutdownOperation(self):
+        if hasattr(self, "PartitionState") and self.PartitionState is not None:
+            for p in range(len(self.PartitionState)):
+                self.PartitionState[p].shutdownOperation()
         self._initVars()
-        for p in range(3):
-            self.PartitionState[p].shutdownOperation()
 
     @property
     def isrunning(self) -> bool:

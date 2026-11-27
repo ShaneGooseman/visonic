@@ -94,7 +94,7 @@ class VisonicBinarySensor(BinarySensorEntity):
         # Append device id to prevent name clashes in HA.
         self._current_value = (self._visonic_device.isTriggered() or self._visonic_device.isOpen())
         self._is_available = self._visonic_device.isEnrolled()
-        self._visonic_device.onChange(self.onChange)
+        self._unsub_device = self._visonic_device.onChange(self.onChange)
         self._attr_unique_id = slugify(f"{self._name}_sensor")
         self._attr_should_poll = False
         self._attr_translation_key = VISONIC_TRANSLATION_KEY
@@ -112,23 +112,30 @@ class VisonicBinarySensor(BinarySensorEntity):
                 # Do not cause a full Home Assistant Exception, keep it local here
                 _LOGGER.debug("[async_will_remove_from_hass]...........             Caused an exception killing timer task")
                 _LOGGER.debug(f"[async_will_remove_from_hass]                           {ex}")   
-        self._visonic_device.onChange(None)
+        if self._unsub_device is not None:
+            self._unsub_device()
+            self._unsub_device = None
         self._visonic_device = None
         self._is_available = False
         self._client = None
         await super().async_will_remove_from_hass()
 
     async def _retainStateTimout(self):
+        if self._client is None:
+            self.timerTask = None
+            return
         timeout = self._client.getSensorOnDelay(self.device_class)
         _LOGGER.debug(f"[_retainStateTimout] in   id = {self.unique_id}   timeout = {timeout}    dc={self.device_class}")
-        await asyncio.sleep(timeout) 
-        if self._visonic_device is not None:
-            self._current_value = self._visonic_device.isTriggered() or self._visonic_device.isOpen()
-            self._is_available = self._visonic_device.isEnrolled()
-        if self.hass is not None and self.entity_id is not None:
-            self.schedule_update_ha_state()
-        _LOGGER.debug(f"[_retainStateTimout] out  id = {self.unique_id}   timeout = {timeout}    current = {self._current_value}")
-        self.timerTask = None
+        try:
+            await asyncio.sleep(timeout)
+            if self._visonic_device is not None:
+                self._current_value = self._visonic_device.isTriggered() or self._visonic_device.isOpen()
+                self._is_available = self._visonic_device.isEnrolled()
+            if self.hass is not None and self.entity_id is not None:
+                self.async_write_ha_state()
+            _LOGGER.debug(f"[_retainStateTimout] out  id = {self.unique_id}   timeout = {timeout}    current = {self._current_value}")
+        finally:
+            self.timerTask = None
 
     def onChange(self, sensor : AlSensorDevice, s : AlSensorCondition):
         """Call on any change to the sensor."""
@@ -141,14 +148,14 @@ class VisonicBinarySensor(BinarySensorEntity):
                 newval = self._visonic_device.isTriggered() or self._visonic_device.isOpen()
                 if newval and not self._current_value:
                     # kick off timer
-                    self.timerTask = self.hass.loop.create_task(self._retainStateTimout())
+                    self.timerTask = self.hass.async_create_task(self._retainStateTimout())
                 self._current_value = newval
 
             self._is_available = self._visonic_device.isEnrolled()
             _LOGGER.debug(f"[onChange] id = {self.unique_id}   self._is_available = {self._is_available}    self._current_value = {self._current_value}")
-            # Ask HA to schedule an update
+            # Ask HA to write the updated state
             if self.entity_id is not None:
-                self.schedule_update_ha_state()
+                self.async_write_ha_state()
         else:
             _LOGGER.debug("[onChange] called but sensor is not defined")
 

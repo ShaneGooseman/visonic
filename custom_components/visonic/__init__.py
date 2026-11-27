@@ -267,8 +267,8 @@ def translateLanguage(hass):
     _LOGGER.debug(f"[translateLanguage] alarm control panel event_names translations {en_vals}")
 
     if len(en_vals) > 0:
-        pmLogPowerMaxUser_t = []
-        pmLogPowerMasterUser_t = []
+        pmLogPowerMaxUser_t.clear()
+        pmLogPowerMasterUser_t.clear()
         for v in pmLogPower:
             # Use the translation if in the list else default back to the English.  
             #     The translation file does not need to contain all 14 translations
@@ -284,7 +284,7 @@ def translateLanguage(hass):
         _LOGGER.debug(f"[translateLanguage]       pmLogPowerMasterUser_t = {pmLogPowerMasterUser_t}")
 
     # Retrieve the actions from the language translations files
-    for key in range(0, len(pmLogEvent_t)+1):
+    for key in range(len(pmLogEvent_t)):
         state = f"{key:0>3}"
         tx_s = async_translate_state(hass=hass, 
                                      domain=DOMAIN,

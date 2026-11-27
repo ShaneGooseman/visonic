@@ -96,8 +96,9 @@ class VisonicAlarm(AlarmControlPanelEntity):
         self._client = client
         self._mystate = AlarmControlPanelState.DISARMED
         self._last_triggered = None
+        self._attr_should_poll = False
         self.resetPartition(partition)
-        self._client.onChange(callback = self.onClientChange)
+        self._unsub_client = self._client.onChange(callback = self.onClientChange)
         self._attr_translation_key = VISONIC_TRANSLATION_KEY
 
     def resetPartition(self, partition : int | None):
@@ -122,7 +123,11 @@ class VisonicAlarm(AlarmControlPanelEntity):
 
     async def async_will_remove_from_hass(self):
         """Remove from hass."""
-        _LOGGER.debug(f"[async_will_remove_from_hass] panel {self._client.getPanelID()}, name {self._myname}")
+        if self._unsub_client is not None:
+            self._unsub_client()
+            self._unsub_client = None
+        panel_id = self._client.getPanelID() if self._client is not None else "unknown"
+        _LOGGER.debug(f"[async_will_remove_from_hass] panel {panel_id}, name {self._myname}")
         self._client = None
         await super().async_will_remove_from_hass()
 
@@ -139,9 +144,9 @@ class VisonicAlarm(AlarmControlPanelEntity):
         """HA Event Callback."""
         #_LOGGER.debug(f"alarm control panel onChange {self.entity_id=}   {self.available=}")
         if self.hass is not None and self.entity_id is not None:
-            self.schedule_update_ha_state(True)
+            self.async_schedule_update_ha_state(True)
 
-    def update(self) -> None:
+    async def async_update(self) -> None:
         """Get the state of the device."""
         #_LOGGER.debug(f"[update]")
         if self._client is None:
@@ -251,7 +256,7 @@ class VisonicAlarm(AlarmControlPanelEntity):
             self._attr_alarm_state = self._mystate           # writing to this calls the "setter" to refresh the cached property
 
 
-    def alarm_disarm(self, code=None):
+    async def async_alarm_disarm(self, code: str | None = None) -> None:
         """Send disarm command."""
         #_LOGGER.debug(f"alarm control panel alarm_disarm {self.entity_id=}")
         if not self.isPanelConnected():
@@ -265,7 +270,7 @@ class VisonicAlarm(AlarmControlPanelEntity):
         if self._client is not None:
             self._client.sendCommand("Disarm", AlPanelCommand.DISARM, code, self._partitionSet)
 
-    def alarm_arm_night(self, code=None):
+    async def async_alarm_arm_night(self, code: str | None = None) -> None:
         """Send arm night command (Same as arm home)."""
         #_LOGGER.debug(f"alarm control panel alarm_arm_night {self.entity_id=}")
         if not self.isPanelConnected():
@@ -279,7 +284,7 @@ class VisonicAlarm(AlarmControlPanelEntity):
         if self._client is not None and self._client.isArmNight():
             self._client.sendCommand("Arm Night", AlPanelCommand.ARM_HOME_INSTANT, code, self._partitionSet)
 
-    def alarm_arm_home(self, code=None):
+    async def async_alarm_arm_home(self, code: str | None = None) -> None:
         """Send arm home command."""
         #_LOGGER.debug(f"alarm control panel alarm_arm_home {self.entity_id=}")
         if not self.isPanelConnected():
@@ -294,7 +299,7 @@ class VisonicAlarm(AlarmControlPanelEntity):
             command = AlPanelCommand.ARM_HOME_INSTANT if self._client.isArmHomeInstant() else AlPanelCommand.ARM_HOME
             self._client.sendCommand("Arm Home", command, code, self._partitionSet)
 
-    def alarm_arm_away(self, code=None):
+    async def async_alarm_arm_away(self, code: str | None = None) -> None:
         """Send arm away command."""
         #_LOGGER.debug(f"alarm control panel alarm_arm_away {self.entity_id=}")
         if not self.isPanelConnected():
@@ -309,7 +314,7 @@ class VisonicAlarm(AlarmControlPanelEntity):
             command = AlPanelCommand.ARM_AWAY_INSTANT if self._client.isArmAwayInstant() else AlPanelCommand.ARM_AWAY
             self._client.sendCommand("Arm Away", command, code, self._partitionSet)
 
-    def alarm_trigger(self, code=None):
+    async def async_alarm_trigger(self, code: str | None = None) -> None:
         """Send alarm trigger command."""
         #_LOGGER.debug(f"alarm control panel alarm_trigger {self.entity_id=}")
         if not self.isPanelConnected():
@@ -323,6 +328,6 @@ class VisonicAlarm(AlarmControlPanelEntity):
         if self._client is not None and self._client.isPowerMaster():
             self._client.sendCommand("Trigger Siren", AlPanelCommand.TRIGGER , code, None)
 
-    def alarm_arm_custom_bypass(self, data=None):
+    async def async_alarm_arm_custom_bypass(self, code: str | None = None) -> None:
         """Bypass Panel."""
         _LOGGER.warning("Alarm Panel Custom Bypass Not Yet Implemented")

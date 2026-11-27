@@ -55,7 +55,7 @@ class VisonicSwitch(SwitchEntity):
         _LOGGER.debug("[VisonicSwitch] Creating X10 Switch %s", visonic_device.id)
         self._client = client
         self._visonic_device = visonic_device
-        self._visonic_device.onChange(self.onChange)
+        self._unsub_device = self._visonic_device.onChange(self.onChange)
         self._x10id = self._visonic_device.getDeviceID()
         self._panel = client.getPanelID()
         self._current_value = self._visonic_device.isOn()
@@ -73,6 +73,9 @@ class VisonicSwitch(SwitchEntity):
     async def async_will_remove_from_hass(self):
         """Remove from hass."""
         _LOGGER.debug(f"[async_will_remove_from_hass] id = {self.unique_id}")
+        if self._unsub_device is not None:
+            self._unsub_device()
+            self._unsub_device = None
         self._visonic_device = None
         self._is_available = False
         self._client = None
@@ -91,10 +94,12 @@ class VisonicSwitch(SwitchEntity):
     def onChange(self, switch : AlSwitchDevice):
         """Switch state has changed."""
         # the switch parameter is the same as self._visonic_device, but it's a generic callback handler that cals this function
+        if self._visonic_device is None:
+            return
         _LOGGER.debug("[onChange] Switch changeHandler %s", str(self._name))
         self._current_value = self._visonic_device.isOn()
         if self.hass is not None and self.entity_id is not None:
-            self.schedule_update_ha_state()
+            self.async_write_ha_state()
 
     @property
     def available(self) -> bool:
@@ -112,11 +117,11 @@ class VisonicSwitch(SwitchEntity):
         """Return true if device is on."""
         return self._current_value
 
-    def turn_on(self, **kwargs):
+    async def async_turn_on(self, **kwargs):
         """Turn the device on."""
         self.turnmeonandoff(AlX10Command.ON)
 
-    def turn_off(self, **kwargs):
+    async def async_turn_off(self, **kwargs):
         """Turn the device off."""
         self.turnmeonandoff(AlX10Command.OFF)
 
@@ -145,10 +150,10 @@ class VisonicSwitch(SwitchEntity):
     def extra_state_attributes(self):
         """Return the state attributes of the device."""
         attr = {}
-
-        attr["location"] = self._visonic_device.getLocation()
+        if self._visonic_device is not None:
+            attr["location"] = self._visonic_device.getLocation()
+            attr["type"] = self._visonic_device.getType()
+            attr[DEVICE_ATTRIBUTE_NAME] = self._visonic_device.getDeviceID()
         attr["name"] = self._dname
-        attr["type"] = self._visonic_device.getType()
-        attr[DEVICE_ATTRIBUTE_NAME] = self._visonic_device.getDeviceID()
         attr[PANEL_ATTRIBUTE_NAME] = self._panel
         return attr

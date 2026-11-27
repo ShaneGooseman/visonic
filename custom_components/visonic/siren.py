@@ -56,7 +56,7 @@ class VisonicSiren(SirenEntity):
         """Initialize a Visonic security alarm."""
         self._client = client
         self.hass = hass
-        client.onChange(callback = self.onClientChange)
+        self._unsub_client = client.onChange(callback = self.onClientChange)
         #self._partition_id = partition_id
         self._mystate = False
         pname = client.getMyString()
@@ -85,16 +85,19 @@ class VisonicSiren(SirenEntity):
         """Turn the siren on."""
         self.external = True
         if self.hass is not None and self.entity_id is not None:
-            self.schedule_update_ha_state(True)
+            self.async_schedule_update_ha_state(True)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the siren off."""
         self.external = False
         if self.hass is not None and self.entity_id is not None:
-            self.schedule_update_ha_state(True)
+            self.async_schedule_update_ha_state(True)
 
     async def async_will_remove_from_hass(self):
         """Remove from hass."""
+        if self._unsub_client is not None:
+            self._unsub_client()
+            self._unsub_client = None
         _LOGGER.debug(f"[async_will_remove_from_hass] {self._myname} panel {self._panel}")
         self._client = None
         await super().async_will_remove_from_hass()
@@ -104,7 +107,7 @@ class VisonicSiren(SirenEntity):
         """HA Event Callback."""
         #_LOGGER.debug(f"siren onChange {self.entity_id=}   {self.available=}")
         if self.hass is not None and self.entity_id is not None:
-            self.schedule_update_ha_state(True)
+            self.async_schedule_update_ha_state(True)
 
     def isPanelConnected(self) -> bool:
         """Are we connected to the Alarm Panel."""
@@ -127,7 +130,7 @@ class VisonicSiren(SirenEntity):
         return "Siren"
 
 
-    def update(self):
+    async def async_update(self):
         """Get the state of the device."""
         #_LOGGER.debug(f"[update] {self.entity_id=}")
         oldstate = self._mystate

@@ -6,7 +6,7 @@ from homeassistant.util import slugify
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity import DeviceInfo, Entity
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
+from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN, SensorEntity
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.components.alarm_control_panel import AlarmControlPanelState
 
@@ -70,17 +70,18 @@ async def async_setup_entry(
     entry.runtime_data.dispatchers[SENSOR_DOMAIN] = async_dispatcher_connect(hass, f"{DOMAIN}_{entry.entry_id}_add_{SENSOR_DOMAIN}", async_add_sensor)
     #_LOGGER.debug("[async_setup_entry] exit")
 
-class VisonicSensor(Entity):
+class VisonicSensor(SensorEntity):
     """Representation of a Visonic alarm control panel as a simple sensor for minimal."""
 
     def __init__(self, hass: HomeAssistant, client: VisonicClient, partition : int = None):
         """Initialize a Visonic security alarm."""
         self._client = client
         self.hass = hass
-        self._attr_state = STATE_UNKNOWN
+        self._attr_native_value = None
+        self._attr_should_poll = False
         self._last_triggered = ""
         self.resetPartition(partition)
-        self._client.onChange(callback = self.onClientChange)
+        self._unsub_client = self._client.onChange(callback = self.onClientChange)
         #_LOGGER.debug(f"[VisonicSensor] Initialising alarm sensor {self._myname}")
         self._attr_unique_id = slugify(self._myname+"_sensor")
         self._attr_name = "Alarm Panel" # self._name
@@ -111,7 +112,11 @@ class VisonicSensor(Entity):
 
     async def async_will_remove_from_hass(self):
         """Remove from hass."""
-        _LOGGER.debug(f"[async_will_remove_from_hass] Removing alarm panel sensor {self._myname} panel {self._client.getPanelID()}")
+        if self._unsub_client is not None:
+            self._unsub_client()
+            self._unsub_client = None
+        panel_id = self._client.getPanelID() if self._client is not None else "unknown"
+        _LOGGER.debug(f"[async_will_remove_from_hass] Removing alarm panel sensor {self._myname} panel {panel_id}")
         self._client = None
         await super().async_will_remove_from_hass()
 
@@ -122,11 +127,16 @@ class VisonicSensor(Entity):
             return False
         return self._client.isPanelConnected()
 
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        return self.isPanelConnected()
+
     # The callback handler from the client. All we need to do is schedule an update.
     def onClientChange(self):
         """HA Event Callback."""
         if self.hass is not None and self.entity_id is not None:
-            self.schedule_update_ha_state(True)
+            self.async_schedule_update_ha_state(True)
 
     @property
     def changed_by(self):
@@ -138,21 +148,21 @@ class VisonicSensor(Entity):
         """Prevent HA adding the device name to the start of the entity name."""
         return False
 
-    def update(self):
+    async def async_update(self):
         """Get the state of the device."""
-        #_LOGGER.debug(f"[update] before {self._attr_state=}")
-        self._attr_state = STATE_UNKNOWN
+        #_LOGGER.debug(f"[update] before {self._attr_native_value=}")
+        self._attr_native_value = None
         self._attr_extra_state_attributes = {}
 
         if self._client is not None and self.isPanelConnected():
             ptu = self._client.getPartitionsInUse()
             isa, _ = self._client.isSirenActive(None if ptu is None else 0)
             if isa:
-                self._attr_state = AlarmControlPanelState.TRIGGERED
+                self._attr_native_value = AlarmControlPanelState.TRIGGERED
             else:
                 armcode = self._client.getPanelStatus(self._partition)
                 if armcode is not None and armcode in map_panel_status_to_ha_status:
-                    self._attr_state = map_panel_status_to_ha_status[armcode]
+                    self._attr_native_value = map_panel_status_to_ha_status[armcode]
 
             stat = self._client.getPanelStatusDict(self._partition)
             #_LOGGER.debug(f"[update] stat {stat}")

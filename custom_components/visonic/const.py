@@ -4,7 +4,8 @@ from .pyconst import AlPanelStatus
 from homeassistant.const import Platform
 from homeassistant.components.alarm_control_panel import AlarmControlPanelState
 from homeassistant.util.hass_dict import HassKey, HassEntryKey
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Any
 from homeassistant.config_entries import ConfigEntry
 
 # The domain for the integration
@@ -165,9 +166,9 @@ type VisonicConfigEntry = ConfigEntry[VisonicConfigData]
 
 @dataclass
 class VisonicConfigData:
-    client: object
-    alarm_entity: None      # This is the alarm control entity that is first created.  For multi partiton panels, this is changed to be the overall control entity.
-    sensors: list()
-    dispatchers: dict()
+    client: Any
+    alarm_entity: Any = None      # This is the alarm control entity that is first created.  For multi partiton panels, this is changed to be the overall control entity.
+    sensors: list[Any] = field(default_factory=list)
+    dispatchers: dict[str, Any] = field(default_factory=dict)
     # Made it a class just in case I want to include more parameters in future
 

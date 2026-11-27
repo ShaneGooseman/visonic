@@ -1723,8 +1723,9 @@ class ProtocolBase(AlPanelInterfaceHelper, AlPanelDataStream, MyChecksumCalc):
                         #   If there's a timeout then resend the previous message. If that doesn't work then dump the message and continue, but log the error
                         if not self.pmLastSentMessage.triedResendingMessage:
                             # resend the last message
+                            msg_name = self.pmLastSentMessage.command.msg if self.pmLastSentMessage.command is not None else "RAW"
                             log.debug(f"[_despatcher] ****************************** Resend Timer Expired ********************************")
-                            log.debug(f"[_despatcher]                Re-Sending last message  {self.pmLastSentMessage.command.msg}")
+                            log.debug(f"[_despatcher]                Re-Sending last message  {msg_name}")
                             self.pmLastSentMessage.triedResendingMessage = True
                             post_delay = sendPdu(self.pmLastSentMessage)
                         else:
@@ -1743,10 +1744,13 @@ class ProtocolBase(AlPanelInterfaceHelper, AlPanelDataStream, MyChecksumCalc):
                     #log.debug(f"[_despatcher]  Command has a post delay of {post_delay}")
                     await asyncio.sleep(post_delay)
 
+            except asyncio.CancelledError:
+                raise
             except Exception as ex:
                 log.error("[_despatcher] Visonic Executor loop has caused an exception")
                 log.error(f"             {ex}")
                 self.despatcherException = True
+                await asyncio.sleep(0.5)
 
     # There are 2 Tasks that manage the panel (despatcher and sequencer):
     #  This is the sequencer, it manages the state of the connection with the panel
@@ -6149,7 +6153,11 @@ class VisonicProtocol(PacketHandling):
 
                 self._add_message_to_send_queue(Send.PM_SETBAUD, priority = MessagePriority.VITAL, options=[ [4, bpin], [13, baud_data] ])  #  
 
-                while not self.is_send_queue_empty(priority = MessagePriority.VITAL):
+                deadline = self.loop.time() + 5.0
+                while not self.suspendAllOperations and not self.is_send_queue_empty(priority = MessagePriority.VITAL):
+                    if self.loop.time() >= deadline:
+                        log.warning("[setPanelBaud] Timed out waiting for baud message to be sent")
+                        return AlCommandStatus.FAIL_PANEL_NO_CONNECTION
                     log.debug(f"    Waiting for baud to be sent")
                     await asyncio.sleep(0.1)
 

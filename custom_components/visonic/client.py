@@ -546,7 +546,12 @@ class VisonicClient:
         if condition == AvailableNotifications.ALWAYS or condition.value in notification_config:
             # Create an info entry in the log file and an HA notification
             self.logstate_info(f"HA Notification: {condition}  {message}")
-            persistent_notification.create(self.hass, message, title=NOTIFICATION_TITLE, notification_id=NOTIFICATION_ID)
+            persistent_notification.create(
+                self.hass,
+                message,
+                title=NOTIFICATION_TITLE,
+                notification_id=f"{NOTIFICATION_ID}_{self.getPanelID()}_{condition.value}",
+            )
         else:
             # Just create a log file entry (but indicate that it wasnt shown in the frontend to the user
             self.logstate_info(f"HA Notification (not shown in frontend due to user config), condition is {condition} message={message}")
@@ -1090,6 +1095,9 @@ class VisonicClient:
 
     def onChange(self, callback : Callable):
         self.onChangeHandler.add(callback)
+        def _unsubscribe():
+            self.onChangeHandler.discard(callback)
+        return _unsubscribe
 
     def setPartitionNaming(self, partition : int | None = None, panel_entity_name : str | None = None):
         if panel_entity_name is not None and partition is not None and 1 <= partition <= 3:
@@ -2252,32 +2260,34 @@ class VisonicClient:
         if not self.alreadyDoingThisFunction:
             epicfail = False
             self.alreadyDoingThisFunction = True
-            if self.SystemStarted:
-                if self.totalAttempts > 0 or force_reconnect:                  # If the user says 0 restart attempts then do not restart at all
-                    if self.doingRestart is None:
-                        self.logstate_debug(f"Setting up panel reconnection to Visonic Panel {self.getPanelID()}")
-                        if allow_comms and await self._async_connect_comms():                  # Try a simple comms reconnect first, evaluated left to right
-                            self.logstate_debug(f"Setting up panel reconnection success to Visonic Panel {self.getPanelID()}")
-                            self._fireHAEvent(event_id = PanelCondition.CONNECTION, datadictionary = {"state": "connected", "attempt": 1})
-                        elif self.doingRestart is None:                        # Check doingRestart again as it could have changed
-                            if allow_restart:                                      # if the simple reconnect fails then optionally do a restart, 
-                                self.logstate_debug(f"Doing a Full Restart to Visonic Panel {self.getPanelID()}")
-                                self.doingRestart = self.hass.loop.create_task(_async_panel_restart())    # do restart 
+            try:
+                if self.SystemStarted:
+                    if self.totalAttempts > 0 or force_reconnect:                  # If the user says 0 restart attempts then do not restart at all
+                        if self.doingRestart is None:
+                            self.logstate_debug(f"Setting up panel reconnection to Visonic Panel {self.getPanelID()}")
+                            if allow_comms and await self._async_connect_comms():                  # Try a simple comms reconnect first, evaluated left to right
+                                self.logstate_debug(f"Setting up panel reconnection success to Visonic Panel {self.getPanelID()}")
+                                self._fireHAEvent(event_id = PanelCondition.CONNECTION, datadictionary = {"state": "connected", "attempt": 1})
+                            elif self.doingRestart is None:                        # Check doingRestart again as it could have changed
+                                if allow_restart:                                      # if the simple reconnect fails then optionally do a restart, 
+                                    self.logstate_debug(f"Doing a Full Restart to Visonic Panel {self.getPanelID()}")
+                                    self.doingRestart = self.hass.async_create_task(_async_panel_restart())    # do restart 
+                                else:
+                                    self.logstate_debug(f"Setting up panel reconnection failed to Visonic Panel {self.getPanelID()}. Restart not allowed in this context.")
+                                    epicfail = True
                             else:
-                                self.logstate_debug(f"Setting up panel reconnection failed to Visonic Panel {self.getPanelID()}. Restart not allowed in this context.")
-                                epicfail = True
+                                self.logstate_debug(f"Setting up panel reconnection failed to Visonic Panel {self.getPanelID()}. And a Restart is in progress.")
                         else:
-                            self.logstate_debug(f"Setting up panel reconnection failed to Visonic Panel {self.getPanelID()}. And a Restart is in progress.")
+                            self.logstate_debug(f"Not Setting up panel reconnection, already doing Restart to Visonic Panel {self.getPanelID()}")
+                            epicfail = True
                     else:
-                        self.logstate_debug(f"Not Setting up panel reconnection, already doing Restart to Visonic Panel {self.getPanelID()}")
+                        self.logstate_info(f"Sorry, a simple Reconnection is not possible to Visonic Panel {self.getPanelID()} user specified 0 reconnect attempts")
                         epicfail = True
                 else:
-                    self.logstate_info(f"Sorry, a simple Reconnection is not possible to Visonic Panel {self.getPanelID()} user specified 0 reconnect attempts")
+                    self.logstate_info(f"Sorry, a simple Reconnection is not possible to Visonic Panel {self.getPanelID()} as system has stopped and lost all context, so please Reload")
                     epicfail = True
-            else:
-                self.logstate_info(f"Sorry, a simple Reconnection is not possible to Visonic Panel {self.getPanelID()} as system has stopped and lost all context, so please Reload")
-                epicfail = True
-            self.alreadyDoingThisFunction = False
+            finally:
+                self.alreadyDoingThisFunction = False
             if epicfail:
                 self.logstate_debug(f"   Epic Fail, stopping connection to Visonic Panel {self.getPanelID()}")
                 await self.async_panel_stop()
@@ -2310,8 +2320,7 @@ class VisonicClient:
                     self.logstate_debug("........... _kill_restart, there is already an ongoing restart so stopping it")
                     try:
                         self.doingRestart.cancel()
-                        while not self.doingRestart.done():
-                            await asyncio.sleep(0.0)
+                        await asyncio.gather(self.doingRestart, return_exceptions=True)
                     except Exception as ex:
                         self.logstate_debug("...........             Caused an exception")
                         self.logstate_debug(f"                           {ex}")   
@@ -2440,7 +2449,9 @@ class VisonicClient:
                                 if self.visonicProtocol is None:
                                     # The connection has been stopped
                                     return False
-                        except:
+                        except asyncio.CancelledError:
+                            raise
+                        except Exception:
                             self.logstate_debug(f"........... connection attempt delay exception")
                     if self.visonicProtocol is None:
                         # The connection has been stopped
@@ -2496,8 +2507,13 @@ class VisonicClient:
                         self.visonicProtocol.onNewSensor(self.onNewSensor)
                         self.visonicProtocol.onNewSwitch(self.onNewSwitch)
                         ## Establish a callback to stop the component when the stop event occurs
-                        self.hass.bus.async_listen_once(
-                            EVENT_HOMEASSISTANT_STOP, self.async_panel_stop
+                        async def _on_ha_stop(_event) -> None:
+                            await self.async_panel_stop(killRestart=True)
+
+                        self.entry.async_on_unload(
+                            self.hass.bus.async_listen_once(
+                                EVENT_HOMEASSISTANT_STOP, _on_ha_stop
+                            )
                         )
                         # Record that we have started the system
                         self.SystemStarted = True
@@ -2528,7 +2544,7 @@ class VisonicClient:
             except (ConnectTimeout, HTTPError) as ex:
                 self.createNotification(
                     AvailableNotifications.CONNECTION_PROBLEM,
-                    "Visonic Panel Connection Error: {ex}<br />You will need to restart hass after fixing.")
+                    f"Visonic Panel Connection Error: {ex}<br />You will need to restart hass after fixing.")
 
         if not self.SystemStarted and self.visonicProtocol is not None:
             self.logstate_debug("........... Shutting Down Protocol")

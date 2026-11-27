@@ -53,7 +53,7 @@ class VisonicSelect(SelectEntity):
         self.hass = hass
         self._client = client
         self._visonic_device = visonic_device
-        self._visonic_device.onChange(self.onChange)
+        self._unsub_device = self._visonic_device.onChange(self.onChange)
         dname = visonic_device.createFriendlyName()
         pname = client.getMyString()
         self._name = str(pname + dname).lower()  # this must match the binary_sensor self._name so that device_info associates them
@@ -71,6 +71,9 @@ class VisonicSelect(SelectEntity):
     async def async_will_remove_from_hass(self):
         """Remove from hass."""
         _LOGGER.debug(f"[async_will_remove_from_hass] id = {self.unique_id}")
+        if self._unsub_device is not None:
+            self._unsub_device()
+            self._unsub_device = None
         self._visonic_device = None
         self._client = None
         self._is_available = False
@@ -89,9 +92,9 @@ class VisonicSelect(SelectEntity):
             #_LOGGER.debug("[onChange] Implemented in panel")
             self._pending_state_is_armed = None
 
-        # Ask HA to schedule an update
+        # Ask HA to write the updated state
         if self.hass is not None and self.entity_id is not None:
-            self.schedule_update_ha_state(True)
+            self.async_write_ha_state()
 
     @property
     def options(self) -> list[str]:
@@ -135,7 +138,7 @@ class VisonicSelect(SelectEntity):
             return False
         return self._client.isPanelConnected()
 
-    def select_option(self, option: str) -> None:
+    async def async_select_option(self, option: str) -> None:
         """Change the visonic sensor armed state"""
             
         # get the current date and time
@@ -190,12 +193,13 @@ class VisonicSelect(SelectEntity):
                 )
 
         if self.hass is not None and self.entity_id is not None:
-            self.schedule_update_ha_state(True)
+            self.async_write_ha_state()
 
     @property
     def extra_state_attributes(self):
         """Return the state attributes of the device."""
         attr = {}
         attr[PANEL_ATTRIBUTE_NAME] = self._panel
-        attr[DEVICE_ATTRIBUTE_NAME] = self._visonic_device.getDeviceID()
+        if self._visonic_device is not None:
+            attr[DEVICE_ATTRIBUTE_NAME] = self._visonic_device.getDeviceID()
         return attr
