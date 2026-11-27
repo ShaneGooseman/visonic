@@ -2,6 +2,8 @@
 
 # Panel de Alarma Visonic para Home Assistant
 
+**Versión actual:** [`1.0.0`](https://github.com/ShaneGooseman/visonic/releases/tag/v1.0.0) — [notas de la release](https://github.com/ShaneGooseman/visonic/wiki/Version-History-ES) · [Historial de cambios](https://github.com/ShaneGooseman/visonic/blob/master/CHANGELOG.md)
+
 **Integración personalizada local** para Home Assistant (bifurcada de [davesmeghead/visonic](https://github.com/davesmeghead/visonic) y mantenida en [ShaneGooseman/visonic](https://github.com/ShaneGooseman/visonic)).
 
 ## Introducción
@@ -29,8 +31,20 @@ Existen 4 opciones de conexión local:
 - **Sin dependencia de `Pillow`:** El análisis de imágenes JPEG de cámaras PIR se realiza en Python puro (solo requiere `serialx`).
 - **Iconos locales e interfaz en español:** Recursos visuales claros y oscuros en `custom_components/visonic/brand/` y traducción completa al español (`translations/es.json`).
 
+## Versiones
+
+Este fork se versiona de forma independiente del proyecto original. La versión que muestran Home Assistant y HACS es la declarada en `custom_components/visonic/manifest.json`.
+
+| Versión | Fecha | Novedades |
+|---|---|---|
+| [`1.0.0`](https://github.com/ShaneGooseman/visonic/releases/tag/v1.0.0) | 2026-11-27 | Primera release versionada: arquitectura por capas `core/` + `protocol/`, entidades nativas de diagnóstico y medición, reconfiguración en caliente, traducciones ES/FR/IT/NL, assets de marca y wiki bilingüe. La numeración pasa del linaje upstream de cuatro partes (`0.12.6.0`) a SemVer de tres partes. |
+
+- Historial completo: [`CHANGELOG.md`](https://github.com/ShaneGooseman/visonic/blob/master/CHANGELOG.md)
+- Notas detalladas: [Versiones e historial](https://github.com/ShaneGooseman/visonic/wiki/Version-History-ES)
+
 ## Índice
 - [Aspecto en la interfaz](#aspecto-en-la-interfaz)
+- [Versiones e historial](https://github.com/ShaneGooseman/visonic/wiki/Version-History-ES)
 - [Paneles Visonic compatibles](#paneles-visonic-compatibles)
 - [Funcionalidad y entidades compatibles](#funcionalidad-y-entidades-compatibles)
 - [Configuración de hardware](https://github.com/ShaneGooseman/visonic/wiki/Hardware-Setup-ES)

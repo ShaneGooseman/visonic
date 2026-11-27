@@ -2,6 +2,8 @@
 
 # Visonic Alarm Panel for Home Assistant
 
+**Current version:** [`1.0.0`](https://github.com/ShaneGooseman/visonic/releases/tag/v1.0.0) — [release notes](https://github.com/ShaneGooseman/visonic/wiki/Version-History) · [Changelog](https://github.com/ShaneGooseman/visonic/blob/master/CHANGELOG.md)
+
 A local **Custom Integration** for Home Assistant (forked from [davesmeghead/visonic](https://github.com/davesmeghead/visonic) and maintained at [ShaneGooseman/visonic](https://github.com/ShaneGooseman/visonic)).
 
 ## Introduction
@@ -29,8 +31,20 @@ There are 4 local connection methods:
 - **Zero `Pillow` dependency:** Camera PIR JPEG dimensions are parsed in pure Python (only `serialx` is required).
 - **Local brand icons & Spanish UI:** Light/dark brand assets in `custom_components/visonic/brand/` and full Spanish translation (`translations/es.json`).
 
+## Releases
+
+This fork is versioned independently from the upstream project. The version displayed by Home Assistant and HACS is the one declared in `custom_components/visonic/manifest.json`.
+
+| Version | Date | Highlights |
+|---|---|---|
+| [`1.0.0`](https://github.com/ShaneGooseman/visonic/releases/tag/v1.0.0) | 2026-11-27 | First versioned release: layered `core/` + `protocol/` architecture, native diagnostic/measurement entities, in-place reconfigure, ES/FR/IT/NL translations, brand assets and bilingual wiki. Versioning moves from the upstream four-part lineage (`0.12.6.0`) to three-part SemVer. |
+
+- Full history: [`CHANGELOG.md`](https://github.com/ShaneGooseman/visonic/blob/master/CHANGELOG.md)
+- Detailed release notes: [Version History & Releases](https://github.com/ShaneGooseman/visonic/wiki/Version-History)
+
 ## Contents
 - [What the Frontend Looks Like](#what-my-frontend-looks-like)
+- [Releases & Changelog](https://github.com/ShaneGooseman/visonic/wiki/Version-History)
 - [Supported Visonic Panels](#supported-visonic-panels)
 - [Supported Panel Functionality](#supported-panel-functionality)
 - [Hardware Setup](https://github.com/ShaneGooseman/visonic/wiki/Hardware-Setup)
