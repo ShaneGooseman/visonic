@@ -5,7 +5,7 @@ import asyncio
 import re
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass, BinarySensorEntity
-from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.core import HomeAssistant, cached_property, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -60,11 +60,18 @@ async def async_setup_entry(
 
     @callback
     def async_add_binary_sensor(device: AlSensorDevice) -> None:
-        """Add Visonic Binary Sensor."""
+        """Add Visonic Binary Sensor and diagnostic tamper/battery binary sensors."""
         _LOGGER.debug(f"[async_setup_entry] adding {device.getDeviceID()}")
-        vbs = VisonicBinarySensor(hass, entry.runtime_data.client, device, entry)
-        entities: list[BinarySensorEntity] = []
-        entities.append(vbs)
+        client = entry.runtime_data.client
+        vbs = VisonicBinarySensor(hass, client, device, entry)
+        entities: list[BinarySensorEntity] = [
+            vbs,
+            VisonicZoneDiagnosticBinarySensor(hass, client, device, "tamper"),
+        ]
+        if device.getSensorType() != AlSensorType.WIRED:
+            entities.append(
+                VisonicZoneDiagnosticBinarySensor(hass, client, device, "battery")
+            )
         async_add_entities(entities)
         entry.runtime_data.sensors.append(vbs)
 
@@ -110,8 +117,12 @@ class VisonicBinarySensor(BinarySensorEntity):
         self._unsub_device = self._visonic_device.onChange(self.onChange)
         self._attr_unique_id = slugify(f"{self._name}_sensor")
         self._attr_should_poll = False
+        self._attr_has_entity_name = True
         self._attr_translation_key = VISONIC_TRANSLATION_KEY
-        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, self._name)})
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self._name)},
+            manufacturer=MANUFACTURER,
+        )
 
     # Called when an entity is about to be removed from Home Assistant. Example use: disconnect from the server or unsubscribe from updates.
     async def async_will_remove_from_hass(self):
@@ -181,11 +192,6 @@ class VisonicBinarySensor(BinarySensorEntity):
     def name(self) -> str | None:
         """Name."""
         return "Zone"
-
-    @property
-    def has_entity_name(self) -> bool:
-        """Prevent HA adding the device name to the start of the entity name."""
-        return False
 
     @property
     def is_on(self):
@@ -292,3 +298,67 @@ class VisonicBinarySensor(BinarySensorEntity):
             return attr
             
         return { }
+
+
+class VisonicZoneDiagnosticBinarySensor(BinarySensorEntity):
+    """Diagnostic binary sensor for zone tamper or low battery."""
+
+    _attr_has_entity_name = True
+    _attr_should_poll = False
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        client: VisonicClient,
+        sensor: AlSensorDevice,
+        kind: str,
+    ) -> None:
+        """Initialize the diagnostic zone binary sensor."""
+        self.hass = hass
+        self._visonic_device: AlSensorDevice | None = sensor
+        self._kind = kind
+        dname = sensor.createFriendlyName()
+        pname = client.getMyString()
+        dev_ident = str(pname + dname).lower()
+        self._attr_unique_id = slugify(f"{dev_ident}_{kind}")
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, dev_ident)},
+            manufacturer=MANUFACTURER,
+        )
+        if kind == "tamper":
+            self._attr_device_class = BinarySensorDeviceClass.TAMPER
+            self._attr_name = "Tamper"
+        else:
+            self._attr_device_class = BinarySensorDeviceClass.BATTERY
+            self._attr_name = "Battery"
+        self._unsub_device = self._visonic_device.onChange(self._on_change)
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Unsubscribe when removed from Home Assistant."""
+        if self._unsub_device is not None:
+            self._unsub_device()
+            self._unsub_device = None
+        self._visonic_device = None
+        await super().async_will_remove_from_hass()
+
+    def _on_change(self, sensor: AlSensorDevice, condition: AlSensorCondition) -> None:
+        """Write state updates on sensor change."""
+        if self.hass is not None and self.entity_id is not None:
+            self.async_write_ha_state()
+
+    @property
+    def available(self) -> bool:
+        """Return True if the underlying zone sensor is enrolled."""
+        return self._visonic_device is not None and self._visonic_device.isEnrolled()
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return True if tamper or low battery is active."""
+        if self._visonic_device is None:
+            return None
+        if self._kind == "tamper":
+            tamper = self._visonic_device.isTamper()
+            zone_tamper = self._visonic_device.isZoneTamper()
+            return bool(tamper) or bool(zone_tamper)
+        return bool(self._visonic_device.isLowBattery())

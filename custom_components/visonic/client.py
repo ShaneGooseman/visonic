@@ -427,6 +427,7 @@ class VisonicClient:
 
         self.sensor_list = list()
         self.image_list = list()
+        self.zone_measurement_sensors: set[tuple[int, str]] = set()
         self.x10_list = list()
 
         self.delayBetweenAttempts = 60.0
@@ -1095,6 +1096,7 @@ class VisonicClient:
                     self.logstate_debug(f"Sensor Zone Z{sensor.getDeviceID():0>2} already in the lists")
             if not self.DisableAllCommands and sensor.getDeviceID() not in self.image_list and sensor.getSensorType() == AlSensorType.CAMERA:
                 await self.create_image_entity(sensor)
+            await self.create_zone_measurement_entities(sensor)
         else:
             self.logstate_debug(f"Sensor {sensor.getDeviceID()} in exclusion list")
 
@@ -1107,6 +1109,17 @@ class VisonicClient:
                 self.image_list.append(sensor.getDeviceID())
                 # The connection to the panel allows interaction with the sensor, including asking to get the image from a camera
                 await self._setupVisonicEntity(IMAGE_DOMAIN, sensor)
+
+    async def create_zone_measurement_entities(self, sensor: AlSensorDevice):
+        """Create native temperature/illuminance sensor entities when a zone reports them."""
+        async with self.visonic_sensor_setup_lock:
+            dev_id = sensor.getDeviceID()
+            if sensor.getTemperature() is not None and (dev_id, "temperature") not in self.zone_measurement_sensors:
+                self.zone_measurement_sensors.add((dev_id, "temperature"))
+                await self._setupVisonicEntity(SENSOR_DOMAIN, (sensor, "temperature"))
+            if sensor.getLux() is not None and (dev_id, "lux") not in self.zone_measurement_sensors:
+                self.zone_measurement_sensors.add((dev_id, "lux"))
+                await self._setupVisonicEntity(SENSOR_DOMAIN, (sensor, "lux"))
 
     def onChange(self, callback : Callable):
         self.onChangeHandler.add(callback)
@@ -1186,7 +1199,13 @@ class VisonicClient:
         self.logstate_debug(f"onSensorChange {c.name} {sensor}")
         # Check to make sure we have an image entity created for this sensor
         if not self.DisableAllCommands and sensor.getDeviceID() not in self.image_list and sensor.getSensorType() == AlSensorType.CAMERA:
-            self.hass.loop.create_task(self.create_image_entity(sensor))
+            self.hass.async_create_task(self.create_image_entity(sensor))
+        dev_id = sensor.getDeviceID()
+        if (
+            (sensor.getTemperature() is not None and (dev_id, "temperature") not in self.zone_measurement_sensors)
+            or (sensor.getLux() is not None and (dev_id, "lux") not in self.zone_measurement_sensors)
+        ):
+            self.hass.async_create_task(self.create_zone_measurement_entities(sensor))
     
     def onSwitchChange(self, switch : AlSwitchDevice):
         #self.logstate_debug(f"onSwitchChange {switch}")

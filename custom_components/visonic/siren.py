@@ -77,9 +77,13 @@ class VisonicSiren(SirenEntity):
 #            self._attr_supported_features |= SirenEntityFeature.DURATION
         self._attr_available_tones = None # available_tones
         self._attr_should_poll = False
+        self._attr_has_entity_name = True
         self._attr_translation_key = VISONIC_TRANSLATION_KEY
         self._attr_unique_id = slugify(self._myname + "_siren")
-        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, self._client.getAlarmPanelUniqueIdent())})
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self._client.getAlarmPanelUniqueIdent())},
+            manufacturer=MANUFACTURER,
+        )
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the siren on."""

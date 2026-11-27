@@ -63,8 +63,12 @@ class VisonicSelect(SelectEntity):
         self._pending_state_is_armed = None
         self.lastCommandData = None
         self._attr_should_poll = False
+        self._attr_has_entity_name = True
         self._attr_unique_id = slugify(self._name + "_select")
-        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, self._name)})
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self._name)},
+            manufacturer=MANUFACTURER,
+        )
         self._attr_translation_key = VISONIC_TRANSLATION_KEY
 
     # Called when an entity is about to be removed from Home Assistant. Example use: disconnect from the server or unsubscribe from updates.
@@ -115,11 +119,6 @@ class VisonicSelect(SelectEntity):
     def name(self) -> str | None:
         """Name."""
         return "Arm Mode"
-
-    @property
-    def has_entity_name(self) -> bool:
-        """Prevent HA adding the device name to the start of the entity name."""
-        return False
 
     @property
     def icon(self) -> str | None:

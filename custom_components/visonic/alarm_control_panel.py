@@ -159,8 +159,10 @@ class VisonicAlarm(AlarmControlPanelEntity):
         sf = AlarmControlPanelEntityFeature(0)
         di = {
             "identifiers": {(DOMAIN, self._client.getAlarmPanelUniqueIdent())},
-            "name": f"{self._myname}", # Device Name (after unmangling")
+            "manufacturer": MANUFACTURER,
         }
+        if self._partition is None or self._partition == 0:
+            di["name"] = f"{self._myname}"
         
         if self._client is not None and self.isPanelConnected():
             isa, dev = self._client.isSirenActive(self._partition)

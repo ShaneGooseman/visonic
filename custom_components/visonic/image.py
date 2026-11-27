@@ -60,7 +60,11 @@ class VisonicImage(ImageEntity):
         #_LOGGER.debug(f"************* image init ************** Sensor ID {self._dname}     Sensor Type {visonic_device.getSensorType()}")
         self._attr_unique_id = slugify(self._name + "_image")
         self._attr_name = "Image"
-        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, self._name)})
+        self._attr_has_entity_name = True
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self._name)},
+            manufacturer=MANUFACTURER,
+        )
 
     # Called when an entity is about to be removed from Home Assistant. Example use: disconnect from the server or unsubscribe from updates.
     async def async_will_remove_from_hass(self):
@@ -106,8 +110,3 @@ class VisonicImage(ImageEntity):
     async def async_image(self) -> bytes | None:
         """Update the image if it is not cached."""
         return self._sensor_image
-
-    @property
-    def has_entity_name(self) -> bool:
-        """Prevent HA adding the device name to the start of the entity name."""
-        return False

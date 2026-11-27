@@ -6,7 +6,13 @@ from homeassistant.util import slugify
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity import DeviceInfo, Entity
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN, SensorEntity
+from homeassistant.components.sensor import (
+    DOMAIN as SENSOR_DOMAIN,
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
+from homeassistant.const import LIGHT_LUX, UnitOfTemperature
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.components.alarm_control_panel import AlarmControlPanelState
 
@@ -32,7 +38,7 @@ from .const import (
     PANEL_ATTRIBUTE_NAME,
 )
 
-from .pyconst import AlPanelStatus
+from .pyconst import AlPanelStatus, AlSensorCondition, AlSensorDevice
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,11 +51,18 @@ async def async_setup_entry(
     #_LOGGER.debug(f"[async_setup_entry] start")
 
     @callback
-    def async_add_sensor(main_one : bool = False) -> None:
-        """Add Visonic Sensor (to behave instead of the alarm panel when all comms is prevented)."""
+    def async_add_sensor(payload=False) -> None:
+        """Add Visonic panel sensor (minimal mode) or zone measurement sensors (temperature/lux)."""
         entities: list[Entity] = []
         client: VisonicClient = entry.runtime_data.client
 
+        if isinstance(payload, tuple) and len(payload) == 2 and isinstance(payload[0], AlSensorDevice):
+            device, kind = payload
+            entities.append(VisonicZoneSensor(hass, client, device, kind))
+            async_add_entities(entities)
+            return
+
+        main_one = bool(payload)
         p = client.getPartitionsInUse()
 
         if main_one and entry.runtime_data.alarm_entity is None: #  or p is None or (p is not None and len(p) == 1):
@@ -99,6 +112,7 @@ class VisonicSensor(SensorEntity):
         #_LOGGER.debug(f"[VisonicSensor] Initialising alarm sensor {self._myname}")
         self._attr_unique_id = slugify(self._myname+"_sensor")
         self._attr_name = "Alarm Panel" # self._name
+        self._attr_has_entity_name = True
         self._attr_translation_key = VISONIC_TRANSLATION_KEY
 
     def resetPartition(self, partition : int | None):
@@ -121,6 +135,7 @@ class VisonicSensor(SensorEntity):
         pm = self._client.getPanelModel()
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self._client.getAlarmPanelUniqueIdent())},
+            manufacturer=MANUFACTURER,
             model = pm,
         )
 
@@ -156,11 +171,6 @@ class VisonicSensor(SensorEntity):
     def changed_by(self):
         """Last change triggered by."""
         return self._last_triggered
-
-    @property
-    def has_entity_name(self) -> bool:
-        """Prevent HA adding the device name to the start of the entity name."""
-        return False
 
     async def async_update(self):
         """Get the state of the device."""
@@ -198,3 +208,67 @@ class VisonicSensor(SensorEntity):
             #_LOGGER.debug(f"[update] _attr_extra_state_attributes {self._attr_extra_state_attributes=}")
 
         #_LOGGER.debug(f"[update] after {self._attr_state=}")
+
+
+class VisonicZoneSensor(SensorEntity):
+    """Measurement sensor entity for zone temperature or illuminance (lux)."""
+
+    _attr_has_entity_name = True
+    _attr_should_poll = False
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        client: VisonicClient,
+        sensor: AlSensorDevice,
+        kind: str,
+    ) -> None:
+        """Initialize the zone measurement sensor."""
+        self.hass = hass
+        self._visonic_device: AlSensorDevice | None = sensor
+        self._kind = kind
+        dname = sensor.createFriendlyName()
+        pname = client.getMyString()
+        dev_ident = str(pname + dname).lower()
+        self._attr_unique_id = slugify(f"{dev_ident}_{kind}")
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, dev_ident)},
+            manufacturer=MANUFACTURER,
+        )
+        if kind == "temperature":
+            self._attr_device_class = SensorDeviceClass.TEMPERATURE
+            self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+            self._attr_name = "Temperature"
+        else:
+            self._attr_device_class = SensorDeviceClass.ILLUMINANCE
+            self._attr_native_unit_of_measurement = LIGHT_LUX
+            self._attr_name = "Illuminance"
+        self._unsub_device = self._visonic_device.onChange(self._on_change)
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Unsubscribe when removed from Home Assistant."""
+        if self._unsub_device is not None:
+            self._unsub_device()
+            self._unsub_device = None
+        self._visonic_device = None
+        await super().async_will_remove_from_hass()
+
+    def _on_change(self, sensor: AlSensorDevice, condition: AlSensorCondition) -> None:
+        """Write updated measurement on sensor change."""
+        if self.hass is not None and self.entity_id is not None:
+            self.async_write_ha_state()
+
+    @property
+    def available(self) -> bool:
+        """Return True if the zone sensor is enrolled."""
+        return self._visonic_device is not None and self._visonic_device.isEnrolled()
+
+    @property
+    def native_value(self) -> float | int | None:
+        """Return the native measurement value."""
+        if self._visonic_device is None:
+            return None
+        if self._kind == "temperature":
+            return self._visonic_device.getTemperature()
+        return self._visonic_device.getLux()

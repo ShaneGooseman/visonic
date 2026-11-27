@@ -48,7 +48,7 @@ class VisonicSwitch(SwitchEntity):
     """Representation of a Visonic X10 Switch."""
 
     _attr_translation_key: str = VISONIC_TRANSLATION_KEY
-    #_attr_has_entity_name = True
+    _attr_has_entity_name = True
 
     def __init__(self, hass: HomeAssistant, client: VisonicClient, visonic_device: AlSwitchDevice):
         """Initialise a Visonic X10 Device."""
@@ -67,7 +67,10 @@ class VisonicSwitch(SwitchEntity):
         self._attr_unique_id = slugify(self._name + "_switch")
         self._attr_name = None
         self._attr_should_poll = False
-        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, self._name)})
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self._name)},
+            manufacturer=MANUFACTURER,
+        )
 
     # Called when an entity is about to be removed from Home Assistant. Example use: disconnect from the server or unsubscribe from updates.
     async def async_will_remove_from_hass(self):
@@ -85,11 +88,6 @@ class VisonicSwitch(SwitchEntity):
     def name(self) -> str | None:
         """Name."""
         return None
-
-    @property
-    def has_entity_name(self) -> bool:
-        """Prevent HA adding the device name to the start of the entity name."""
-        return False
 
     def onChange(self, switch : AlSwitchDevice):
         """Switch state has changed."""
