@@ -87,5 +87,24 @@ class TestRegistryHelperModule(unittest.TestCase):
         self.assertIn("visonic_pgm", idents)
 
 
+class TestMarketplaceReadiness(unittest.TestCase):
+    """Validate Home Assistant Marketplace / HACS manifest and brand assets."""
+
+    def test_manifest_has_categories_and_valid_brand_assets(self) -> None:
+        import json
+
+        manifest = json.loads((VISONIC_DIR / "manifest.json").read_text(encoding="utf-8"))
+        self.assertIn("categories", manifest)
+        self.assertGreaterEqual(len(manifest["categories"]), 1)
+        keys = list(manifest.keys())
+        self.assertEqual(keys[:2], ["domain", "name"])
+        self.assertEqual(keys[2:], sorted(keys[2:]))
+
+        brand_dir = VISONIC_DIR / "brand"
+        for filename in ("icon.png", "icon@2x.png", "logo.png", "logo@2x.png"):
+            raw = (brand_dir / filename).read_bytes()
+            self.assertEqual(raw[:8], b"\x89PNG\r\n\x1a\n", f"{filename} is not a valid PNG")
+
+
 if __name__ == "__main__":
     unittest.main()
