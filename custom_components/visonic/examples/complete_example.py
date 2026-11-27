@@ -12,11 +12,11 @@ import asyncio
 from collections import defaultdict
 from time import sleep
 from datetime import datetime
-from pyconst import AlIntEnum, AlTransport, PanelConfig, AlConfiguration, AlPanelMode, AlPanelCommand, AlPanelStatus, AlTroubleType, AlAlarmType, AlSensorCondition, AlCommandStatus, AlX10Command, AlCondition, AlSensorDevice, AlLogPanelEvent, AlSensorType, AlSwitchDevice
+from protocol.const import AlIntEnum, AlTransport, PanelConfig, AlConfiguration, AlPanelMode, AlPanelCommand, AlPanelStatus, AlTroubleType, AlAlarmType, AlSensorCondition, AlCommandStatus, AlX10Command, AlCondition, AlSensorDevice, AlLogPanelEvent, AlSensorType, AlSwitchDevice
 import argparse
 import re
 from enum import Enum
-from pyvisonic import VisonicProtocol
+from protocol.visonic import VisonicProtocol
 import socket
 from inspect import currentframe, getframeinfo, stack
 from functools import partial

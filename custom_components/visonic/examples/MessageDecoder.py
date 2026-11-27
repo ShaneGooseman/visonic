@@ -8,7 +8,7 @@ parentdir = os.path.dirname(currentdir)
 sys.path.insert(1000000,parentdir) 
 
 import logging
-from pyvisonic import VisonicProtocol
+from protocol.visonic import VisonicProtocol
 
 #    0d b0 03 24 22 ff 08 ff 1d 07 00 00 00 22 00 00 00 0a 06 0c 05 08 19 14 03 03 00 87 00 00 00 87 00 00 00 05 00 00 45 43 be 0a
 #d = "0d 1f 43 d4 0a 0d 02 43 ba 0a"

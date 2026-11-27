@@ -15,8 +15,8 @@ from collections import defaultdict
 import socket
 from enum import Enum
 
-from pyconst import AlIntEnum, AlTransport, PanelConfig, AlConfiguration, AlPanelMode, AlPanelCommand, AlPanelStatus, AlTroubleType, AlAlarmType, AlSensorCondition, AlCommandStatus, AlX10Command, AlCondition, AlSensorDevice, AlLogPanelEvent, AlSensorType, AlSwitchDevice
-from pyvisonic import VisonicProtocol
+from protocol.const import AlIntEnum, AlTransport, PanelConfig, AlConfiguration, AlPanelMode, AlPanelCommand, AlPanelStatus, AlTroubleType, AlAlarmType, AlSensorCondition, AlCommandStatus, AlX10Command, AlCondition, AlSensorDevice, AlLogPanelEvent, AlSensorType, AlSwitchDevice
+from protocol.visonic import VisonicProtocol
 
 parser = argparse.ArgumentParser(description="Connect to Visonic Alarm Panel")
 parser.add_argument("-usb", help="visonic alarm usb device", default="")

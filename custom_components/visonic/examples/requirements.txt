@@ -1,3 +1,2 @@
 aconsole==0.0.8
 serialx
-Pillow
