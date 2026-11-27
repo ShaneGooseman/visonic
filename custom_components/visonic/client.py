@@ -198,6 +198,7 @@ def convertByteArray(s) -> bytearray:
 
 from .event_coordinator import PanelEventCoordinator
 from .event_log import resolve_allowed_log_path, write_panel_event_log_files
+from .registry_helper import rationalise_panel_devices
 from .transport import (
     ClientVisonicProtocol,
     async_create_tcp_connection,
@@ -996,73 +997,15 @@ class VisonicClient:
         pass
 
     def rationalise_ha_devices(self):
-
-        def buildEntitySet() -> set:
-            panel_ident = self.getAlarmPanelUniqueIdent()
-            retval = {panel_ident, slugify(panel_ident)}
-            for sensor in self.sensor_list:
-                entname = self.getMyString() + sensor.createFriendlyName().lower()
-                retval.add(entname)
-            for switch in self.x10_list:
-                entname = self.getMyString() + switch.createFriendlyName().lower()
-                retval.add(entname)
-            return retval
- 
-        def filterEntitybyPanelIdent( entities : list, p : int ) -> list:
-            retval = []
-            reg = f"{re.escape(self.getMyString())}([xz]\\d\\d|pgm)"
-            for e in entities:
-                if re.search(reg, e.unique_id):
-                    retval.append(e)
-            return retval                
-            
-        def filterDevicebyPanelIdent( devices : list, p : int ) -> list:
-            retval = []
-            reg = f"^{re.escape(self.getMyString())}([xz]\\d\\d|pgm)$"
-            for d in devices:
-                for i in d.identifiers:
-                    if re.search(reg, i[1]):
-                        retval.append(d)
-                        break
-            return retval                
-
-        # Get the set of sensors and switches created by this panel (a set contains unique items, no duplication)
-        my_entities = buildEntitySet()
-        self.logstate_debug(f"     Set of Current Devices From Panel {my_entities}")
-
-        # Get entity and device registry
-        entity_reg = er.async_get(self.hass)
-        device_reg = dr.async_get(self.hass)
-
-        # Get a list of Home Assistant Visonic devices asociated with this config
-        device_entries = dr.async_entries_for_config_entry(device_reg, self.getEntryID())
-
-        #for device in device_entries:
-        #    self.logstate_debug(f"        HA Device BEFORE {device}")
-
-        # Filter the devices for this panel ID (so we dont remove devices for other panels that may still be valid)
-        #    As we get the list of devices for this config we shouldn't need to do this but just in case
-        device_entries = filterDevicebyPanelIdent(device_entries, self.getPanelID())
-        
-        # Clear out all devices not created by this panel
-        for device in device_entries:
-            #self.logstate_debug(f"        HA Device        {device}")
-            # Get the list of Entities associated with this Device
-            entity_entries = er.async_entries_for_device(entity_reg, device.id, True)
-            #for entity in entity_entries:
-            #    self.logstate_debug(f"             has entity {entity}")
-            for ident in device.identifiers:
-                # This is important, it has to match the identifiers return in each entity device_info
-                #    as "identifiers": {(DOMAIN, slugify(self._name))},
-                if ident[1] not in my_entities:     
-                    self.logstate_debug(f"               Deleting this device from HA")
-                    # Delete the entities in this device first
-                    for entity in entity_entries:
-                        self.logstate_debug(f"                     Deleting this entity from HA {entity}")
-                        entity_reg.async_remove(entity.entity_id)
-                    # Delete this device
-                    device_reg.async_remove_device(device.id)
-                    break
+        rationalise_panel_devices(
+            hass=self.hass,
+            entry_id=self.getEntryID(),
+            panel_ident=self.getAlarmPanelUniqueIdent(),
+            prefix=self.getMyString(),
+            sensor_list=self.sensor_list,
+            x10_list=self.x10_list,
+            log_debug=self.logstate_debug,
+        )
 
         # Get the entities that are associated with this config
 #        entity_entries = er.async_entries_for_config_entry(entity_reg, self.getEntryID())
@@ -1572,6 +1515,14 @@ class VisonicClient:
         self.createNotification(an, f"Visonic Alarm Panel: Attempt to {message} for panel {self.getPanelID()}, panel needs to be in the {st} state")
         return False
 
+    def _get_panel_entity_id(self) -> str:
+        """Return the current entity_id of the main alarm entity, resilient to user renames."""
+        runtime_data = getattr(self.entry, "runtime_data", None)
+        alarm_ent = getattr(runtime_data, "alarm_entity", None)
+        if alarm_ent is not None and getattr(alarm_ent, "entity_id", None):
+            return alarm_ent.entity_id
+        return Platform.ALARM_CONTROL_PANEL + "." + slugify(self.getAlarmPanelUniqueIdent())
+
     async def check_the_basics(self, call, message : str) -> bool:
         """Common Service call."""
         if not self.DisableAllCommands:
@@ -1580,9 +1531,8 @@ class VisonicClient:
             if self.isPanelConnected():
                 # The panel is connected and is in a known state
                 if call.context.user_id:
-                    #self.logstate_debug(f"Checking user information for permissions: {call.context.user_id}")
                     # Check security permissions (that this user has access to the alarm panel entity)
-                    await self._checkUserPermission(call, POLICY_READ, Platform.ALARM_CONTROL_PANEL + "." + slugify(self.getAlarmPanelUniqueIdent()))
+                    await self._checkUserPermission(call, POLICY_READ, self._get_panel_entity_id())
                 self.logstate_debug(f"Received {message} request - user approved")
                 if isinstance(call.data, dict):
                     # call data is a dictionary
@@ -1596,7 +1546,7 @@ class VisonicClient:
             self.createNotification(AvailableNotifications.COMMAND_NOT_SENT, f"Visonic Alarm Panel: Panel Commands Disabled")
         return False
 
-    def decode_code_from_call_data(self, call, message : str, cond : PanelCondition) -> (bool , str):
+    def decode_code_from_call_data(self, call, message : str, cond : PanelCondition) -> tuple[bool, str]:
         code = None
         if ATTR_CODE in call.data:
             code = call.data[ATTR_CODE]
@@ -1627,7 +1577,7 @@ class VisonicClient:
         for key in d:
             self.logstate_debug(f"  {key} = {d[key]}")
 
-    async def decode_entity(self, call, ent_type : str, message : str, an : AvailableNotifications) -> (int | None , str | None):
+    async def decode_entity(self, call, ent_type : str, message : str, an : AvailableNotifications) -> tuple[int | None, str | None]:
         # Get the Entity from the call
         if ATTR_ENTITY_ID in call.data:
             eid = str(call.data[ATTR_ENTITY_ID])
@@ -1636,9 +1586,8 @@ class VisonicClient:
             if valid_entity_id(eid):
                 # Its a valid entity
                 if call.context.user_id:
-                    #self.logstate_debug(f"Checking user information for permissions: {call.context.user_id}")
-                    # Check security permissions (that this user has access to the alarm panel entity)
-                    await self._checkUserPermission(call, POLICY_CONTROL, call.data[ATTR_ENTITY_ID])
+                    # Check security permissions (that this user has access to the target entity)
+                    await self._checkUserPermission(call, POLICY_CONTROL, eid)
                 mybpstate = self.hass.states.get(eid)
                 if mybpstate is not None:
                     # Get the 2 attributes of the entity: panel number and device number
