@@ -8,7 +8,7 @@ A local **Custom Integration** for Home Assistant (forked from [davesmeghead/vis
 
 Visonic produces the PowerMax and PowerMaster alarm panel series. This Home Assistant integration connects **locally** to your alarm panel and allows you to monitor sensors, control arming/disarming, manage X10/PGM switches, and automate responses.
 
-> **Note about this fork (`0.12.6.0`):** This fork focuses on **Direct Local Connections** (Ethernet TCP / ESPHome / `visonic_proxy` and USB/RS-232). Cloud connections (e.g., Tyco / Visonic Go cloud polling) are not part of this branch.
+> **Note about this fork (`1.0.0`):** This fork focuses on **Direct Local Connections** (Ethernet TCP / ESPHome / `visonic_proxy` and USB/RS-232). Cloud connections (e.g., Tyco / Visonic Go cloud polling) are not part of this branch.
 
 There are 4 local connection methods:
 1. **Direct Serial (USB / RS-232 TTL):** A USB-to-TTL serial cable connected directly to the panel's internal PC/IP or RS-232 header.

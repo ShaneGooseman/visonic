@@ -141,7 +141,7 @@ from ..protocol.const import (
 )
 from ..protocol.visonic import VisonicProtocol
 
-CLIENT_VERSION = "0.12.6.0"
+CLIENT_VERSION = "1.0.0"
 
 MAX_CLIENT_LOG_ENTRIES = 1000
 

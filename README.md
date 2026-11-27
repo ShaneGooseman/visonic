@@ -36,6 +36,8 @@ Full documentation is maintained in this repository's Wiki (and mirrored under [
 - **English:** [Wiki Home](https://github.com/ShaneGooseman/visonic/wiki) (local copy: [`docs/wiki/Home.md`](docs/wiki/Home.md))
 - **Español:** [Inicio de la Wiki (ES)](https://github.com/ShaneGooseman/visonic/wiki/Home-ES) (copia local: [`docs/wiki/Home-ES.md`](docs/wiki/Home-ES.md))
 
+Release history is tracked in [`CHANGELOG.md`](CHANGELOG.md).
+
 ## Configuration
 Set up this integration from the **Settings → Devices & Services** page within Home Assistant (manual Ethernet/USB setup, Zeroconf auto-discovery for compatible proxies, and in-place reconfiguration are supported).
 To install via HACS, add `https://github.com/ShaneGooseman/visonic` as a custom repository (category: *Integration*) in HACS, install it, and restart Home Assistant.
@@ -68,6 +70,8 @@ Con esta integración de Home Assistant puedes:
 Toda la documentación actualizada está disponible en la Wiki de este repositorio (y reflejada en [`docs/wiki/`](docs/wiki/)):
 - **Español:** [Inicio de la Wiki (ES)](https://github.com/ShaneGooseman/visonic/wiki/Home-ES) (copia local: [`docs/wiki/Home-ES.md`](docs/wiki/Home-ES.md))
 - **English:** [Wiki Home](https://github.com/ShaneGooseman/visonic/wiki) (local copy: [`docs/wiki/Home.md`](docs/wiki/Home.md))
+
+El historial de versiones se mantiene en [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Configuración
 Configura esta integración desde **Ajustes → Dispositivos y servicios** en Home Assistant (compatible con configuración manual Ethernet/USB, autodescubrimiento Zeroconf para proxies compatibles y reconfiguración sin borrar la integración).

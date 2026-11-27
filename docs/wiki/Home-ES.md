@@ -8,7 +8,7 @@
 
 Visonic fabrica las series de paneles de alarma PowerMax y PowerMaster. Esta integración de Home Assistant se conecta **de forma local** a tu panel de alarma para monitorizar sensores, armar/desarmar el sistema, controlar interruptores X10/PGM y automatizar respuestas.
 
-> **Nota sobre este fork (`0.12.6.0`):** Este fork está centrado en **conexiones locales directas** (Ethernet TCP / ESPHome / `visonic_proxy` y USB/RS-232). Las conexiones en la nube (por ejemplo, sondeo a servidores Tyco / Visonic Go) no forman parte de esta rama.
+> **Nota sobre este fork (`1.0.0`):** Este fork está centrado en **conexiones locales directas** (Ethernet TCP / ESPHome / `visonic_proxy` y USB/RS-232). Las conexiones en la nube (por ejemplo, sondeo a servidores Tyco / Visonic Go) no forman parte de esta rama.
 
 Existen 4 opciones de conexión local:
 1. **Serie directo (USB / RS-232 TTL):** Un cable USB-a-TTL conectado directamente al conector interno PC/IP o RS-232 del panel.
