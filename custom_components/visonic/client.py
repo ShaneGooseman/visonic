@@ -929,9 +929,9 @@ class VisonicClient:
                     # delete
                     self.x10_list.remove(dev)
                     self.logstate_debug(f"X10 Device {dev.getDeviceID()} to be deleted")
-                    dev = device_registry.async_get_device(identifiers=identifiers)
-                    if dev:
-                        device_registry.async_remove_device(dev.getDeviceID())
+                    device_entry = device_registry.async_get_device(identifiers=identifiers)
+                    if device_entry:
+                        device_registry.async_remove_device(device_entry.id)
                     if self.rationalised_ha_devices and self.getPanelMode() in [AlPanelMode.POWERLINK, AlPanelMode.POWERLINK_BRIDGED, AlPanelMode.STANDARD_PLUS]:
                         # If startup has completed, the devices have already been rationalise once, and we're in an appropriate panel mode
                         #   otherwise wait until all sensors are installed
@@ -2009,6 +2009,7 @@ class VisonicClient:
         if await self.check_the_basics(call, "command"):
             isValidPL, code = self.decode_code_from_call_data(call, "PanelCommand", PanelCondition.CHECK_ARM_DISARM_COMMAND)
             if isValidPL:
+                eid = str(call.data.get(ATTR_ENTITY_ID, "unknown"))
                 try:
                     if CONF_COMMAND in call.data:
                         command = call.data[CONF_COMMAND]

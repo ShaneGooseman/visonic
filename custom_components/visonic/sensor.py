@@ -105,7 +105,7 @@ class VisonicSensor(Entity):
         self._client.setPartitionNaming(partition = partition, panel_entity_name = self._myname)
         pm = self._client.getPanelModel()
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, {(DOMAIN, self._client.getAlarmPanelUniqueIdent())})},
+            identifiers={(DOMAIN, self._client.getAlarmPanelUniqueIdent())},
             model = pm,
         )
 

@@ -379,7 +379,7 @@ class VisonicConfigFlow(ConfigFlow, MyHandlers, domain=DOMAIN):
             and len(discovery_info.ip_addresses) > 1
         ):
             existing_host = existing_config_entry.data[CONF_HOST]
-            if existing_host != self.host:
+            if existing_host != host:
                 if existing_host in [str(ip_address) for ip_address in discovery_info.ip_addresses]:
                     host = existing_host
                     _LOGGER.debug(f"[async_step_zeroconf] Resolved new host from an existing configuration for panel {panel_num}  host is {host}")

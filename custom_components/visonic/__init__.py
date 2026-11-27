@@ -328,12 +328,6 @@ async def cleanup_stale_entities(hass : HomeAssistant, config_entry: ConfigEntry
                 entity_registry.async_remove(entry.entity_id)
                 continue
 
-            state = hass.states.get(entry.entity_id)
-
-            # Optional: remove permanently unavailable entities
-            if state and state.state == STATE_UNAVAILABLE:
-                entity_registry.async_remove(entry.entity_id)
-
 
 async def async_setup(hass: HomeAssistant, base_config: dict):
     """Set up the visonic component."""
@@ -663,7 +657,6 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: VisonicConfigEn
         version = 2
         CONF_FORCE_STANDARD = "force_standard"
         
-        _LOGGER.debug(f"   Migrating CONF_FORCE_STANDARD from {conf[CONF_FORCE_STANDARD]}")
         if CONF_FORCE_STANDARD in conf and isinstance(conf[CONF_FORCE_STANDARD], bool):
             _LOGGER.debug(f"   Migrating CONF_FORCE_STANDARD from {conf[CONF_FORCE_STANDARD]} and its boolean")
             if conf[CONF_FORCE_STANDARD]:
@@ -672,7 +665,7 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: VisonicConfigEn
             else:
                 _LOGGER.info(f"   Migration: Force standard not set so using {available_emulation_modes[0]}")
                 conf[CONF_EMULATION_MODE] = available_emulation_modes[0]
-            _LOGGER.info(f"   Emulation mode set to {config_entry.options[CONF_EMULATION_MODE]}")
+            _LOGGER.info(f"   Emulation mode set to {conf[CONF_EMULATION_MODE]}")
         changed = True
 
     if version == 2:
@@ -731,6 +724,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: VisonicConfigEntry):
     _LOGGER.debug("************* terminating connection **************")
 
     unload_ok = True
+    p = "unknown"
     data = entry.runtime_data
     if data.client is not None:
         p = data.client.getPanelID()

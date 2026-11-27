@@ -1059,7 +1059,7 @@ class PartitionStateClass:
         # Update trouble status
         #self.PanelTroubleStatus = pmPanelTroubleType_t[et] if et in pmPanelTroubleType_t else AlTroubleType.NONE
         if et in pmPanelTroubleType_t: self.PanelTroubleStatus = pmPanelTroubleType_t[et]       # event in trigger set
-        if et in pmPanelTroubleType_r: AlTroubleType.NONE                                       # event in restore set
+        if et in pmPanelTroubleType_r: self.PanelTroubleStatus = AlTroubleType.NONE             # event in restore set
 
         # no clauses as if siren gets true again then keep updating self.SirenActive sensor
         if self.SirenActive:

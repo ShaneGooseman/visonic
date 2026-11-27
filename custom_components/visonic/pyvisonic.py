@@ -994,6 +994,8 @@ class VisonicListEntry:
         return self.created < other.created
 
     def insertOptions(self, data : bytearray) -> bytearray:
+        # Work on a copy so shared templates in pmSendMsg are never mutated in-place
+        result = bytearray(data)
         # push in the options in to the appropriate places in the message. Examples are the pin or the specific command
         if self.options != None:
             # the length of instruction.options has to be an even number
@@ -1004,11 +1006,11 @@ class VisonicListEntry:
                 s = self.options[o][0] # [o * 2]      # bit offset as an integer
                 a = self.options[o][1] # [o * 2 + 1]  # the bytearray to insert
                 if isinstance(a, int):
-                    data[s] = a
+                    result[s] = a
                 else:
                     for i in range(0, len(a)):
-                        data[s + i] = a[i]
-        return data
+                        result[s + i] = a[i]
+        return result
 
 # Use PriorityQueue but add a peek function to see the head of the list
 class PriorityQueueWithPeek(asyncio.PriorityQueue):
@@ -5957,8 +5959,10 @@ class VisonicProtocol(PacketHandling):
         if partition is not None:
             if 1 <= partition <= 3:
                 return self.PartitionState[partition-1].getPartitionData()
-            elif partition == 0 and (piu := self.getPartitionsInUse()) is not None:
-                return self.PartitionState[list(piu)[0]].getPanelData()
+            elif partition == 0 and (piu := self.getPartitionsInUse()):
+                idx = min(piu) - 1
+                if 0 <= idx < len(self.PartitionState):
+                    return self.PartitionState[idx].getPanelData()
             return {}
         a = self.PartitionState[0].getPartitionData()
         self.merge(a, self.PartitionState[0].getPanelData())

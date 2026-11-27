@@ -152,7 +152,7 @@ class VisonicSelect(SelectEntity):
                 )
 
         if self._pending_state_is_armed is not None:
-            interval = _getUTCTime - self.lastCommandData
+            interval = _getUTCTime() - self.lastCommandData
             if interval >= timedelta(seconds=3):
                 # Longer than 3 seconds so timeout and set the state to whatever the sensor state bypass/armed is
                 self._pending_state_is_armed = None
