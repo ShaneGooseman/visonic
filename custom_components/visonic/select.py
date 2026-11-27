@@ -16,9 +16,9 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
 from . import VisonicConfigEntry
-from .pyconst import AlSensorDevice, AlCommandStatus, AlSensorCondition
+from .protocol.const import AlSensorDevice, AlCommandStatus, AlSensorCondition
 from .const import DOMAIN, MANUFACTURER, PANEL_ATTRIBUTE_NAME, DEVICE_ATTRIBUTE_NAME, VISONIC_TRANSLATION_KEY
-from .client import VisonicClient
+from .core.client import VisonicClient
 
 _LOGGER = logging.getLogger(__name__)
 

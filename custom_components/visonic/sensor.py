@@ -27,7 +27,7 @@ from homeassistant.const import (
     STATE_UNKNOWN,
 )
 
-from .client import VisonicClient
+from .core.client import VisonicClient
 from . import VisonicConfigEntry
 from .const import (
     DOMAIN,
@@ -38,7 +38,7 @@ from .const import (
     PANEL_ATTRIBUTE_NAME,
 )
 
-from .pyconst import AlPanelStatus, AlSensorCondition, AlSensorDevice
+from .protocol.const import AlPanelStatus, AlSensorCondition, AlSensorDevice
 
 _LOGGER = logging.getLogger(__name__)
 

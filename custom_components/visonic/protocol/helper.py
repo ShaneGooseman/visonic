@@ -56,15 +56,15 @@ import collections
 from collections import namedtuple
 
 try:
-    from .pyconst import (AlIntEnum, NO_DELAY_SET, PanelConfig, AlPanelMode, AlPanelCommand, AlPanelStatus, AlTroubleType, AlPanelEventData,
+    from .const import (AlIntEnum, NO_DELAY_SET, PanelConfig, AlPanelMode, AlPanelCommand, AlPanelStatus, AlTroubleType, AlPanelEventData,
                           AlAlarmType, AlSensorCondition, AlCommandStatus, AlX10Command, AlCondition, AlPanelInterface, AlSensorDevice, 
                           AlLogPanelEvent, AlSensorType, AlSwitchDevice, TEXT_PANEL_MODEL, TEXT_POWER_MASTER)
-    from .pyenum import EVENT_TYPE, EventDataEnum
+    from .enums import EVENT_TYPE, EventDataEnum
 except ImportError:
-    from pyconst import (AlIntEnum, NO_DELAY_SET, PanelConfig, AlPanelMode, AlPanelCommand, AlPanelStatus, AlTroubleType, AlPanelEventData,
+    from const import (AlIntEnum, NO_DELAY_SET, PanelConfig, AlPanelMode, AlPanelCommand, AlPanelStatus, AlTroubleType, AlPanelEventData,
                          AlAlarmType, AlSensorCondition, AlCommandStatus, AlX10Command, AlCondition, AlPanelInterface, AlSensorDevice, 
                          AlLogPanelEvent, AlSensorType, AlSwitchDevice, TEXT_PANEL_MODEL, TEXT_POWER_MASTER)
-    from pyenum import EVENT_TYPE, EventDataEnum
+    from enums import EVENT_TYPE, EventDataEnum
 
 
 # The reasons to cancel the siren

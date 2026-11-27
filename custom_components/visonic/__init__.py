@@ -31,8 +31,8 @@ from homeassistant.const import (
     EVENT_CORE_CONFIG_UPDATE,
 )
 
-from .pyconst import AlPanelCommand, AlX10Command
-from .client import VisonicClient
+from .protocol.const import AlPanelCommand, AlX10Command
+from .core.client import VisonicClient
 from .const import (
     CONF_DEVICE_TYPE,
     DEVICE_TYPE_ETHERNET,

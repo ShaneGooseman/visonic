@@ -11,8 +11,8 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.util import slugify
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .pyconst import AlSensorDevice, AlSensorCondition
-from .client import VisonicClient
+from .protocol.const import AlSensorDevice, AlSensorCondition
+from .core.client import VisonicClient
 from .const import DOMAIN, MANUFACTURER, PANEL_ATTRIBUTE_NAME, DEVICE_ATTRIBUTE_NAME, VISONIC_TRANSLATION_KEY
 from . import VisonicConfigEntry
 

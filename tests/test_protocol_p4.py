@@ -12,8 +12,8 @@ VISONIC_DIR = Path(__file__).resolve().parents[1] / "custom_components" / "vison
 if str(VISONIC_DIR) not in sys.path:
     sys.path.append(str(VISONIC_DIR))
 
-import pyeprom  # noqa: E402
-import pyvisonic  # noqa: E402
+from protocol import eprom as pyeprom  # noqa: E402
+from protocol import visonic as pyvisonic  # noqa: E402
 
 
 class TestProtocolP4(unittest.TestCase):

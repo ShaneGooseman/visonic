@@ -1,6 +1,6 @@
 """Constants for the connection to a Visonic PowerMax or PowerMaster Alarm System."""
 from enum import Enum, IntFlag
-from .pyconst import AlPanelStatus
+from .protocol.const import AlPanelStatus
 from homeassistant.const import Platform
 from homeassistant.components.alarm_control_panel import AlarmControlPanelState
 from homeassistant.util.hass_dict import HassKey, HassEntryKey

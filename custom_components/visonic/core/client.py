@@ -55,7 +55,7 @@ from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.entity import UNDEFINED, UndefinedType
 from homeassistant.util import slugify
 
-from .const import (
+from ..const import (
     ALARM_COMMAND_EVENT,
     ALARM_PANEL_CHANGE_EVENT,
     ALARM_PANEL_LOG_FILE_COMPLETE,
@@ -118,7 +118,7 @@ from .const import (
     available_emulation_modes,
     map_panel_status_to_ha_status,
 )
-from .pyconst import (
+from ..protocol.const import (
     PE_EVENT,
     PE_NAME,
     PE_PARTITION,
@@ -139,7 +139,7 @@ from .pyconst import (
     AlX10Command,
     PanelConfig,
 )
-from .pyvisonic import VisonicProtocol
+from ..protocol.visonic import VisonicProtocol
 
 CLIENT_VERSION = "0.12.6.0"
 
@@ -198,7 +198,7 @@ def convertByteArray(s) -> bytearray:
 
 from .event_coordinator import PanelEventCoordinator
 from .event_log import resolve_allowed_log_path, write_panel_event_log_files
-from .registry_helper import rationalise_panel_devices
+from .registry import rationalise_panel_devices
 from .transport import (
     ClientVisonicProtocol,
     async_create_tcp_connection,
@@ -229,7 +229,7 @@ class VisonicClient:
         return datetime.now(timezone.utc).astimezone()
 
     def _initialise(self):
-        from . import pmLogEvent_t, pmLogPowerMaxUser_t
+        from .. import pmLogEvent_t, pmLogPowerMaxUser_t
         # panel connection
         self.logstate_debug("reset client panel variables")
         
@@ -581,7 +581,7 @@ class VisonicClient:
 
     def process_panel_event_log(self, entry: AlLogPanelEvent):
         """Process a sequence of panel log events."""
-        from . import pmLogEvent_t, pmLogPowerMaxUser_t, pmLogPowerMasterUser_t
+        from .. import pmLogEvent_t, pmLogPowerMaxUser_t, pmLogPowerMasterUser_t
 
         #self._exc_info = None
         #finish_event = asyncio.Event()

@@ -13,7 +13,7 @@ from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.components.siren import SirenEntity, SirenEntityFeature
 #from homeassistant.config_entries import ConfigEntry
 
-from .client import VisonicClient
+from .core.client import VisonicClient
 from . import VisonicConfigEntry
 from .const import (
     DOMAIN,
@@ -22,8 +22,8 @@ from .const import (
     PANEL_ATTRIBUTE_NAME,
 )
 
-from .pyconst import AlPanelStatus, AlSensorDevice
-from .pyenum import EventDataEnum
+from .protocol.const import AlPanelStatus, AlSensorDevice
+from .protocol.enums import EventDataEnum
 
 _LOGGER = logging.getLogger(__name__)
 

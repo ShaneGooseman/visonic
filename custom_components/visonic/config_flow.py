@@ -41,7 +41,7 @@ from homeassistant.config_entries import (
 from homeassistant.const import CONF_DEVICE, CONF_HOST, CONF_PATH, CONF_PORT
 from homeassistant.core import callback
 
-from .create_schema import VisonicSchema
+from .core.schema import VisonicSchema
 
 _LOGGER = logging.getLogger(__name__)
 

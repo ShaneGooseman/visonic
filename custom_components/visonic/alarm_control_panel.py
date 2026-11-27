@@ -23,9 +23,9 @@ from homeassistant.components.alarm_control_panel.const import (
 )
 
 from . import VisonicConfigEntry
-from .client import VisonicClient
-from .pyconst import AlPanelCommand, AlPanelStatus, AlPanelMode
-from .pyconst import (
+from .core.client import VisonicClient
+from .protocol.const import AlPanelCommand, AlPanelStatus, AlPanelMode
+from .protocol.const import (
     TEXT_PANEL_MODEL,
     TEXT_WATCHDOG_TIMEOUT_TOTAL,
     TEXT_WATCHDOG_TIMEOUT_DAY,

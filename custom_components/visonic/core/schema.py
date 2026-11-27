@@ -26,7 +26,7 @@ from homeassistant.helpers.selector import (
     EntitySelectorConfig,
 )
 
-from .const import (
+from ..const import (
     CONF_EXCLUDE_SENSOR,
     CONF_EXCLUDE_X10,
     CONF_ENABLE_REMOTE_ARM,
@@ -70,7 +70,7 @@ from .const import (
     available_emulation_modes,
 )
 
-from .pyconst import AlSensorCondition
+from ..protocol.const import AlSensorCondition
 
 _LOGGER = logging.getLogger(__name__)
 

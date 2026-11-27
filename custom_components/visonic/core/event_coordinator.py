@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 
-from .pyconst import AlCondition, PE_EVENT, PE_NAME, PE_PARTITION, PE_TIME
+from ..protocol.const import AlCondition, PE_EVENT, PE_NAME, PE_PARTITION, PE_TIME
 
 
 class PanelEventCoordinator:
@@ -47,7 +47,7 @@ class PanelEventCoordinator:
             self.logstate_debug("[EC] _sendData wont send blank data")
 
     def _convert(self) -> dict:
-        from . import pmLogEvent_t, pmLogPowerMasterUser_t, pmLogPowerMaxUser_t
+        from .. import pmLogEvent_t, pmLogPowerMasterUser_t, pmLogPowerMaxUser_t
 
         d = {}
         d[PE_NAME] = "Unknown"

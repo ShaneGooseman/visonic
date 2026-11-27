@@ -51,13 +51,13 @@ import math
 from collections import namedtuple
 
 try:
-    from .pyenum import (EPROM, PanelTypeEnum)
-    from .pyconst import (PanelConfig, EPROM_DOWNLOAD_ALL, NOBYPASSSTR, DISABLE_TEXT)
-    from .pyhelper import (toString)
+    from .enums import (EPROM, PanelTypeEnum)
+    from .const import (PanelConfig, EPROM_DOWNLOAD_ALL, NOBYPASSSTR, DISABLE_TEXT)
+    from .helper import (toString)
 except ImportError:
-    from pyenum import (EPROM, PanelTypeEnum)
-    from pyconst import (PanelConfig, EPROM_DOWNLOAD_ALL, NOBYPASSSTR, DISABLE_TEXT)
-    from pyhelper import (toString)
+    from enums import (EPROM, PanelTypeEnum)
+    from const import (PanelConfig, EPROM_DOWNLOAD_ALL, NOBYPASSSTR, DISABLE_TEXT)
+    from helper import (toString)
 
 ##############################################################################################################################################################################################################################################
 ##########################  EPROM Decode  ###################################################################################################################################################################################################

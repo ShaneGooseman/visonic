@@ -19,8 +19,8 @@ from homeassistant.const import (
 )
 
 from . import VisonicConfigEntry
-from .pyconst import AlSensorDevice, AlSensorType, AlSensorCondition
-from .client import VisonicClient
+from .protocol.const import AlSensorDevice, AlSensorType, AlSensorCondition
+from .core.client import VisonicClient
 from .const import (
     DOMAIN,
     VISONIC_TRANSLATION_KEY,

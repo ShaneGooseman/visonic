@@ -12,7 +12,7 @@ import aioesphomeapi
 import serialx
 from serialx import create_serial_connection
 
-from .pyvisonic import VisonicProtocol
+from ..protocol.visonic import VisonicProtocol
 
 _LOGGER = logging.getLogger(__name__)
 

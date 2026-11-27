@@ -94,21 +94,21 @@ from string import punctuation
 from textwrap import wrap
 
 try:
-    from .pyenum import (CFG, RAW, SEQUENCE, PanelSetting, MessagePriority, DataType, IndexName, Packet, B0SubType, EPROM, Send, Receive, PanelTypeEnum, EVENT_TYPE, PANEL_STATUS)
-    from .pyconst import (AlPanelDataStream, NO_DELAY_SET, PanelConfig, AlConfiguration, AlPanelMode, AlPanelCommand, AlTroubleType, AlPanelEventData, EPROM_DOWNLOAD_ALL,
+    from .enums import (CFG, RAW, SEQUENCE, PanelSetting, MessagePriority, DataType, IndexName, Packet, B0SubType, EPROM, Send, Receive, PanelTypeEnum, EVENT_TYPE, PANEL_STATUS)
+    from .const import (AlPanelDataStream, NO_DELAY_SET, PanelConfig, AlConfiguration, AlPanelMode, AlPanelCommand, AlTroubleType, AlPanelEventData, EPROM_DOWNLOAD_ALL,
                           AlAlarmType, AlPanelStatus, AlSensorCondition, AlCommandStatus, AlX10Command, AlCondition, AlLogPanelEvent, AlSensorType, AlDeviceType, AlTerminationType, PE_PARTITION, NOBYPASSSTR, DISABLE_TEXT,
                           TEXT_PANEL_MODEL, TEXT_WATCHDOG_TIMEOUT_TOTAL, TEXT_WATCHDOG_TIMEOUT_DAY, TEXT_DOWNLOAD_TIMEOUT, TEXT_DL_MESSAGE_RETRIES, TEXT_PROTOCOL_VERSION, TEXT_POWER_MASTER )
-    from .pyhelper import (toString, MyChecksumCalc, AlImageManager, ImageRecord, titlecase, AlPanelInterfaceHelper, 
+    from .helper import (toString, MyChecksumCalc, AlImageManager, ImageRecord, titlecase, AlPanelInterfaceHelper, 
                            AlSensorDeviceHelper, AlSwitchDeviceHelper)
-    from .pyeprom import EPROMManager
+    from .eprom import EPROMManager
 except ImportError:
-    from pyenum import (CFG, RAW, SEQUENCE, PanelSetting, MessagePriority, DataType, IndexName, Packet, B0SubType, EPROM, Send, Receive, PanelTypeEnum, EVENT_TYPE, PANEL_STATUS)
-    from pyconst import (AlPanelDataStream, NO_DELAY_SET, PanelConfig, AlConfiguration, AlPanelMode, AlPanelCommand, AlTroubleType, AlPanelEventData, EPROM_DOWNLOAD_ALL,
+    from enums import (CFG, RAW, SEQUENCE, PanelSetting, MessagePriority, DataType, IndexName, Packet, B0SubType, EPROM, Send, Receive, PanelTypeEnum, EVENT_TYPE, PANEL_STATUS)
+    from const import (AlPanelDataStream, NO_DELAY_SET, PanelConfig, AlConfiguration, AlPanelMode, AlPanelCommand, AlTroubleType, AlPanelEventData, EPROM_DOWNLOAD_ALL,
                           AlAlarmType, AlPanelStatus, AlSensorCondition, AlCommandStatus, AlX10Command, AlCondition, AlLogPanelEvent, AlSensorType, AlDeviceType, AlTerminationType, PE_PARTITION, NOBYPASSSTR, DISABLE_TEXT,
                           TEXT_PANEL_MODEL, TEXT_WATCHDOG_TIMEOUT_TOTAL, TEXT_WATCHDOG_TIMEOUT_DAY, TEXT_DOWNLOAD_TIMEOUT, TEXT_DL_MESSAGE_RETRIES, TEXT_PROTOCOL_VERSION, TEXT_POWER_MASTER )
-    from pyhelper import (toString, MyChecksumCalc, AlImageManager, ImageRecord, titlecase, AlPanelInterfaceHelper, 
+    from helper import (toString, MyChecksumCalc, AlImageManager, ImageRecord, titlecase, AlPanelInterfaceHelper, 
                           AlSensorDeviceHelper, AlSwitchDeviceHelper)
-    from pyeprom import EPROMManager
+    from eprom import EPROMManager
 
 PLUGIN_VERSION = "1.9.6.9"
 
@@ -4451,7 +4451,7 @@ class PacketHandling(ProtocolBase):
             log.warning(f"[handle_msgtypeA7] Truncated packet (len={len(data)})")
             return
         # This is a complete cheat as this library should not access this, just for debug
-        from . import pmLogEvent_t, pmLogPowerMaxUser_t, pmLogPowerMasterUser_t
+        from .. import pmLogEvent_t, pmLogPowerMaxUser_t, pmLogPowerMasterUser_t
         """ MsgType=A7 - Panel Status Change """
         #log.debug(f"[handle_msgtypeA7] Panel Status Change {toString(data)}")
         # 01 00 27 51 02 ff 00 02 00 00

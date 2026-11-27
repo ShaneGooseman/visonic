@@ -9,7 +9,7 @@ from homeassistant.const import CONF_HOST, CONF_PATH, CONF_PORT
 
 from . import VisonicConfigEntry
 from .const import CONF_DOWNLOAD_CODE
-from .client import VisonicClient
+from .core.client import VisonicClient
 
 _LOGGER = logging.getLogger(__name__)
 

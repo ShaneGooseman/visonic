@@ -13,10 +13,10 @@ if str(VISONIC_DIR) not in sys.path:
     # Append (do not insert at 0) so custom_components/visonic/select.py does not shadow stdlib select.
     sys.path.append(str(VISONIC_DIR))
 
-import pyconst  # noqa: E402
-import pyeprom  # noqa: E402
-import pyhelper  # noqa: E402
-import pyvisonic  # noqa: E402
+from protocol import const as pyconst  # noqa: E402
+from protocol import eprom as pyeprom  # noqa: E402
+from protocol import helper as pyhelper  # noqa: E402
+from protocol import visonic as pyvisonic  # noqa: E402
 
 
 class TestProtocolP0P1(unittest.TestCase):

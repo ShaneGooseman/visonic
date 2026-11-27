@@ -10,9 +10,9 @@ VISONIC_DIR = Path(__file__).resolve().parents[1] / "custom_components" / "vison
 if str(VISONIC_DIR) not in sys.path:
     sys.path.append(str(VISONIC_DIR))
 
-import pyenum  # noqa: E402
-import pyhelper  # noqa: E402
-import pyvisonic  # noqa: E402
+from protocol import enums as pyenum  # noqa: E402
+from protocol import helper as pyhelper  # noqa: E402
+from protocol import visonic as pyvisonic  # noqa: E402
 
 
 class TestProtocolP3(unittest.TestCase):

@@ -12,8 +12,8 @@ VISONIC_DIR = Path(__file__).resolve().parents[1] / "custom_components" / "vison
 if str(VISONIC_DIR) not in sys.path:
     sys.path.append(str(VISONIC_DIR))
 
-import event_log  # noqa: E402
-import registry_helper  # noqa: E402
+from core import event_log  # noqa: E402
+from core import registry as registry_helper  # noqa: E402
 
 
 class TestEventLogModule(unittest.TestCase):

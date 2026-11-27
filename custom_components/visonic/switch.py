@@ -12,8 +12,8 @@ from homeassistant.components.switch import DOMAIN as SWITCH_DOMAIN
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
 from . import VisonicConfigEntry
-from .pyconst import AlX10Command, AlSwitchDevice
-from .client import VisonicClient
+from .protocol.const import AlX10Command, AlSwitchDevice
+from .core.client import VisonicClient
 from .const import (
     DOMAIN,
     VISONIC_TRANSLATION_KEY,
