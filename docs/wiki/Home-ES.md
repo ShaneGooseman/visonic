@@ -2,7 +2,7 @@
 
 # Panel de Alarma Visonic para Home Assistant
 
-**Versión actual:** [`1.0.0`](https://github.com/ShaneGooseman/visonic/releases/tag/v1.0.0) — [notas de la release](https://github.com/ShaneGooseman/visonic/wiki/Version-History-ES) · [Historial de cambios](https://github.com/ShaneGooseman/visonic/blob/master/CHANGELOG.md)
+**Versión actual:** [`1.0.1`](https://github.com/ShaneGooseman/visonic/releases/tag/v1.0.1) — [notas de la release](https://github.com/ShaneGooseman/visonic/wiki/Version-History-ES) · [Historial de cambios](https://github.com/ShaneGooseman/visonic/blob/master/CHANGELOG.md)
 
 **Integración personalizada local** para Home Assistant (bifurcada de [davesmeghead/visonic](https://github.com/davesmeghead/visonic) y mantenida en [ShaneGooseman/visonic](https://github.com/ShaneGooseman/visonic)).
 
@@ -37,6 +37,7 @@ Este fork se versiona de forma independiente del proyecto original. La versión 
 
 | Versión | Fecha | Novedades |
 |---|---|---|
+| [`1.0.1`](https://github.com/ShaneGooseman/visonic/releases/tag/v1.0.1) | 2026-11-28 | Permite editar las opciones de la integración en cualquier momento (`OptionsFlow` combina `data` y `options`), añade descripciones explicativas (`data_description`) en la interfaz (ES/EN), pruebas unitarias y documentación actualizada. |
 | [`1.0.0`](https://github.com/ShaneGooseman/visonic/releases/tag/v1.0.0) | 2026-11-27 | Primera release versionada: arquitectura por capas `core/` + `protocol/`, entidades nativas de diagnóstico y medición, reconfiguración en caliente, traducciones ES/FR/IT/NL, assets de marca y wiki bilingüe. La numeración pasa del linaje upstream de cuatro partes (`0.12.6.0`) a SemVer de tres partes. |
 
 - Historial completo: [`CHANGELOG.md`](https://github.com/ShaneGooseman/visonic/blob/master/CHANGELOG.md)
@@ -188,7 +189,7 @@ Se utiliza para descargar la EPROM en modos Estándar Plus y Powerlink (**no** e
 Configura la integración desde **Ajustes → Dispositivos y servicios → + Añadir integración → Visonic Intruder Alarm** (`configuration.yaml` ya no está soportado).
 
 - **Autodescubrimiento Zeroconf:** Los proxies compatibles que anuncien `_visonic._tcp.local.` (como `visonic_proxy`) aparecen automáticamente en **Dispositivos y servicios** para añadirlos en un clic.
-- **Configurar (Opciones):** Modifica retardos, permisos de armado/desarmado, disparadores de sirena, notificaciones y exportación de logs sin borrar la integración.
+- **Configurar (Opciones):** Modifica en cualquier momento retardos, permisos de armado/desarmado, armado instantáneo, disparadores de sirena, notificaciones y exportación de logs sin borrar la integración (incluso si aún no se habían guardado opciones previas). Cada campo en el asistente muestra una descripción explicativa debajo del ajuste.
 - **Reconfigurar:** Permite cambiar los parámetros de conexión Ethernet (`host`, `port`, `esphome_entity_select`) o USB (`path`, `baud`) directamente desde el menú de la integración sin eliminarla.
 - **Recargar:** Reinicia la integración con la configuración actual.
 
@@ -200,31 +201,31 @@ Cada panel debe tener un **Número de panel** único:
 <a name="parametros-de-configuracion"></a>
 ### Parámetros de configuración
 
-Los parámetros marcados con `*` se establecen al crear la integración (los de conexión también se pueden editar con **Reconfigurar**).
+Los parámetros marcados con `*` se establecen al crear la integración (los de conexión también se pueden editar en cualquier momento con **Reconfigurar**, y el resto de ajustes operativos con **Configurar**).
 
 | C | Parámetro | Predeterminado | Descripción |
 |---|-----------|----------------|-------------|
-| * | Tipo de dispositivo | Ethernet | `Ethernet` (host/puerto TCP) o `USB` (ruta serie local y baudios). |
+| * | Tipo de dispositivo | Ethernet | `Ethernet` (host/puerto TCP como ESPHome, `visonic_proxy` o USR-WIFI232) o `USB` (ruta serie local y baudios). |
 | * | Número de panel | `0` | Entero único por panel (`0`, `1`, `2`, ...). |
 | * | Dirección del host / Puerto | — | IP/hostname y puerto TCP para Ethernet/ESPHome/`visonic_proxy`. |
-| * | Entidad de baudios ESPHome | — | Entidad `select` de ESPHome opcional para cambiar baudios (PowerMaster 10/30). |
+| * | Entidad de baudios ESPHome | — | Entidad `select` de ESPHome opcional para cambiar baudios (`9600`/`38400`) en PowerMaster 10/30. |
 | * | Ruta USB / Baudios | `/dev/ttyUSB0` / `9600` | Ruta del dispositivo serie y velocidad (`9600` o `38400`). |
-| * | Modo de emulación | `Powerlink` | `Powerlink`, `Standard` o `Minimal`. |
+| * | Modo de emulación | `Powerlink` | `Powerlink` (control completo y descarga EPROM), `Standard` (control limitado) o `Minimal` (solo lectura). |
 | * | Sensores a excluir | `""` | Lista separada por comas de zonas a excluir (ej. `2,3`). |
 | * | Dispositivos X10 a excluir | `""` | Lista separada por comas de X10 a excluir (`0` = PGM, `1..15` = X10). |
 | * | Código de descarga EPROM | `""` | Código de 4 dígitos (vacío para usar los predeterminados `5650` / `AAAA`). |
 | | Mostrar datos EPROM | `No` | Muestra atributos EPROM no sensibles en el panel. Los campos sensibles (`duress`, `pagerPIN`, `accountNo`, `centralStation`, `pagerNr`) siempre permanecen ocultos. |
-| | Retardo movimiento/cámara | `120` | Segundos que permanece activa una detección de movimiento/cámara. |
-| | Retardo contacto magnético/cableado | `5` | Segundos que permanece abierto un contacto. |
-| | Retardo humo/incendio | `120` | Segundos que permanece activa una alerta de humo/gas/inundación/emergencia. |
+| | Retardo movimiento/cámara | `120` | Segundos que permanece activa una detección de movimiento/cámara antes de volver a reposo. |
+| | Retardo contacto magnético/cableado | `5` | Segundos que permanece abierto un contacto si no se recibe evento de cierre. |
+| | Retardo humo/incendio | `120` | Segundos que permanece activa una alerta de humo/gas/inundación/emergencia antes de restablecerse. |
 | | Disparadores de la sirena | `Intrusión` | Motivos que activan el estado de sirena (`Intrusión`, `Sabotaje`, `Incendio`, `Emergencia`, `Gas`, `Inundación`, `X10`, `Pánico`). |
 | | Disparadores de notificaciones HA | `Problemas de conexión`, `Sirena sonando` | Notificaciones persistentes generadas en Home Assistant. |
-| | Intentos de reconexión | `1` | Número de intentos (`0` = solo intenta conectar al arrancar). |
-| | Espera entre intentos | `90` | Segundos entre reintentos de reconexión. |
+| | Intentos de reconexión | `1` | Número de intentos (`0` = solo intenta conectar al arrancar, sin reintentos). |
+| | Espera entre intentos | `90` | Segundos de espera entre reintentos de reconexión. |
 | | Armar sin código de usuario | `No` | Permite armar sin introducir código (según modelo de panel). |
-| | Forzar teclado numérico | `No` | Exige introducir siempre el código en el teclado de HA. |
-| | Armado en casa / noche | `Sí` / `Sí` | Habilita los modos de armado en casa y nocturno. |
-| | Armado ausente / en casa instantáneo | `No` / `No` | Realiza armado instantáneo (sin retardo de entrada). |
+| | Forzar teclado numérico | `No` | Exige introducir siempre el código PIN en el teclado de HA para armar o desarmar. |
+| | Armado en casa / noche | `Sí` / `Sí` | Habilita los botones de armado en casa y armado nocturno (este último arma en casa instantáneo). |
+| | Armado ausente / en casa instantáneo | `No` / `No` | Si se activa, **anula el retardo de entrada** (la alarma salta al instante sin cuenta atrás al entrar). Déjalo en `No` para respetar la cuenta atrás configurada en el panel. |
 | | Permitir armado / desarmado remoto | `No` / `No` | Autoriza armar y desarmar el panel desde Home Assistant. |
 | | Permitir anulación (bypass) | `No` | Permite anular sensores individuales desde HA. |
 | | Archivo XML / CSV de registro | `""` | Ruta relativa **dentro de `/config`** para exportar el historial (se bloquea cualquier ruta fuera de `/config`). Copia `custom_components/visonic/examples/visonic_template.xml` a `/config/templates/` (o `/config/xml/`, `/config/www/`, `/config/`) para personalizar el XML. |

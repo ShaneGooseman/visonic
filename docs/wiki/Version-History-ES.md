@@ -7,6 +7,18 @@ Este fork se versiona de forma independiente del proyecto original. La versión 
 - Historial canónico de cambios: [`CHANGELOG.md`](https://github.com/ShaneGooseman/visonic/blob/master/CHANGELOG.md)
 - Todas las releases: [Releases](https://github.com/ShaneGooseman/visonic/releases)
 
+## `1.0.1` — 2026-11-28
+
+Release: [`v1.0.1`](https://github.com/ShaneGooseman/visonic/releases/tag/v1.0.1)
+
+### Añadido
+- **Descripciones de ayuda en la interfaz (`data_description`):** textos explicativos bajo cada campo de configuración y opciones en español e inglés (incluyendo el comportamiento del armado instantáneo respecto al retardo de entrada).
+- **Pruebas unitarias (`tests/test_options_flow.py`):** validación del flujo de opciones sin `entry.options` previo y cobertura de `data_description`.
+
+### Corregido
+- **Edición de opciones en cualquier momento:** `VisonicOptionsFlowHandler.async_step_init` ahora combina `entry.data` y `entry.options` al abrir **Configurar**, evitando el fallo `device_error` cuando aún no existían opciones guardadas y manteniendo separados los parámetros de conexión de **Reconfigurar**.
+- **`update_listener`:** acceso seguro a `entry.runtime_data`.
+
 ## `1.0.0` — 2026-11-27
 
 Primera release versionada del fork, partiendo de `0.12.6.0` de [davesmeghead/visonic](https://github.com/davesmeghead/visonic). La numeración deja las cuatro partes heredadas del linaje upstream (`0.12.6.0`) y pasa a SemVer de tres partes (`1.0.0`); `PLUGIN_VERSION` sigue reflejando la versión del protocolo del panel, no la de la integración.

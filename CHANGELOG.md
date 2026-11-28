@@ -6,6 +6,34 @@ y el versionado [SemVer](https://semver.org/lang/es/).
 All notable changes to this fork. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and [SemVer](https://semver.org/).
 
+## [1.0.1] - 2026-11-28
+
+### Español
+
+#### Añadido
+
+- Descripciones explicativas (`data_description` y `description`) en todos los pasos de configuración y opciones de la interfaz en español (`es.json`) e inglés (`en.json`).
+- Pruebas unitarias en `tests/test_options_flow.py` para verificar el flujo de opciones con `entry.options` vacío y la cobertura de `data_description`.
+- Documentación actualizada en `docs/wiki/Home-ES.md`, `docs/wiki/Home.md`, `docs/wiki/Version-History-ES.md` y `docs/wiki/Version-History.md`.
+
+#### Corregido
+
+- `VisonicOptionsFlowHandler.async_step_init` ahora combina `entry.data` y `entry.options` al validar el tipo de dispositivo y modo de emulación, permitiendo editar la configuración desde **Configurar** en cualquier momento (antes abortaba con `device_error` si `entry.options` estaba vacío), sin arrastrar parámetros de conexión a `entry.options` para no interferir con **Reconfigurar**.
+- `update_listener` comprueba de forma segura `entry.runtime_data` mediante `getattr`.
+
+### English
+
+#### Added
+
+- Explanatory field descriptions (`data_description` and `description`) across all UI config and options steps in English (`en.json`) and Spanish (`es.json`).
+- Unit tests in `tests/test_options_flow.py` covering `OptionsFlow` with empty `entry.options` and `data_description` key coverage.
+- Updated documentation in `docs/wiki/Home.md`, `docs/wiki/Home-ES.md`, `docs/wiki/Version-History.md`, and `docs/wiki/Version-History-ES.md`.
+
+#### Fixed
+
+- `VisonicOptionsFlowHandler.async_step_init` now merges `entry.data` and `entry.options` when checking device type and emulation mode, allowing users to edit options via **Configure** at any time (previously aborted with `device_error` when `entry.options` was empty), without copying connection fields into `entry.options` so **Reconfigure** continues to work cleanly.
+- `update_listener` safely guards `entry.runtime_data` lookup with `getattr`.
+
 ## [1.0.0] - 2026-11-27
 
 Primera release versionada del fork, partiendo de `0.12.6.0` de

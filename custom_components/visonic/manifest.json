@@ -12,7 +12,7 @@
   "loggers": ["visonic"],
   "requirements": ["serialx"],
   "single_config_entry": false,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "zeroconf": [
     {
        "type": "_visonic._tcp.local.",

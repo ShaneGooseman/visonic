@@ -2,7 +2,7 @@
 
 # Visonic Alarm Panel for Home Assistant
 
-**Current version:** [`1.0.0`](https://github.com/ShaneGooseman/visonic/releases/tag/v1.0.0) — [release notes](https://github.com/ShaneGooseman/visonic/wiki/Version-History) · [Changelog](https://github.com/ShaneGooseman/visonic/blob/master/CHANGELOG.md)
+**Current version:** [`1.0.1`](https://github.com/ShaneGooseman/visonic/releases/tag/v1.0.1) — [release notes](https://github.com/ShaneGooseman/visonic/wiki/Version-History) · [Changelog](https://github.com/ShaneGooseman/visonic/blob/master/CHANGELOG.md)
 
 A local **Custom Integration** for Home Assistant (forked from [davesmeghead/visonic](https://github.com/davesmeghead/visonic) and maintained at [ShaneGooseman/visonic](https://github.com/ShaneGooseman/visonic)).
 
@@ -37,6 +37,7 @@ This fork is versioned independently from the upstream project. The version disp
 
 | Version | Date | Highlights |
 |---|---|---|
+| [`1.0.1`](https://github.com/ShaneGooseman/visonic/releases/tag/v1.0.1) | 2026-11-28 | Allows editing integration options at any time (`OptionsFlow` merges `data` and `options`), adds explanatory UI field descriptions (`data_description` in EN/ES), unit tests and updated documentation. |
 | [`1.0.0`](https://github.com/ShaneGooseman/visonic/releases/tag/v1.0.0) | 2026-11-27 | First versioned release: layered `core/` + `protocol/` architecture, native diagnostic/measurement entities, in-place reconfigure, ES/FR/IT/NL translations, brand assets and bilingual wiki. Versioning moves from the upstream four-part lineage (`0.12.6.0`) to three-part SemVer. |
 
 - Full history: [`CHANGELOG.md`](https://github.com/ShaneGooseman/visonic/blob/master/CHANGELOG.md)
@@ -179,7 +180,7 @@ Used to download EPROM data in Standard Plus / Powerlink modes (this is **not** 
 Configure the integration from **Settings → Devices & Services → + Add Integration → Visonic Intruder Alarm** (`configuration.yaml` is not supported).
 
 - **Zeroconf Auto-Discovery:** Compatible proxies advertising `_visonic._tcp.local.` (such as `visonic_proxy`) appear automatically in **Devices & Services** for 1-click confirmation.
-- **Configure (Options):** Edit operational settings (delays, arm/disarm permissions, siren triggers, notifications, event log export) without deleting the integration.
+- **Configure (Options):** Edit operational settings at any time (delays, arm/disarm permissions, instant arming, siren triggers, notifications, event log export) without deleting the integration, even if no options were previously saved. Every field in the UI displays an explanatory description underneath.
 - **Reconfigure:** Update Ethernet (`host`, `port`, `esphome_entity_select`) or USB (`path`, `baud`) connection parameters directly from the integration menu without removing it.
 - **Reload:** Restarts the integration with current settings.
 
@@ -190,31 +191,31 @@ Each panel must have a unique **Panel Number**:
 
 ### Configuration Settings
 
-Settings marked with `*` are configured at creation time (connection fields can also be updated via **Reconfigure**).
+Settings marked with `*` are configured at creation time (connection fields can also be updated at any time via **Reconfigure**, and all operational settings via **Configure**).
 
 | C | Setting | Default | Description |
 |---|---------|---------|-------------|
-| * | Device Type | Ethernet | `Ethernet` (TCP host/port) or `USB` (local serial path & baud rate). |
+| * | Device Type | Ethernet | `Ethernet` (TCP host/port such as ESPHome, `visonic_proxy`, or USR-WIFI232) or `USB` (local serial path & baud rate). |
 | * | Panel Number | `0` | Unique integer per panel (`0`, `1`, `2`, ...). |
 | * | Host / Port | — | IP/hostname and TCP port for Ethernet/ESPHome/`visonic_proxy`. |
-| * | ESPHome Baud Entity | — | Optional ESPHome `select` entity to switch baud rate (PowerMaster 10/30). |
+| * | ESPHome Baud Entity | — | Optional ESPHome `select` entity to switch baud rate (`9600`/`38400`) on PowerMaster 10/30 panels. |
 | * | USB Local Path / Baud | `/dev/ttyUSB0` / `9600` | Serial device path and baud rate (`9600` or `38400`). |
-| * | Emulation Mode | `Powerlink` | `Powerlink`, `Standard`, or `Minimal`. |
+| * | Emulation Mode | `Powerlink` | `Powerlink` (full control & EPROM download), `Standard` (limited control), or `Minimal` (read-only). |
 | * | Sensor List to Exclude | `""` | Comma-separated zone numbers to exclude (e.g. `2,3`). |
 | * | X10 Devices to Exclude | `""` | Comma-separated X10 IDs to exclude (`0` = PGM, `1..15` = X10). |
 | * | EPROM Download Code | `""` | Optional 4-digit download code (leave empty for defaults `5650` / `AAAA`). |
 | | Show EPROM Data | `No` | Expose non-sensitive EPROM attributes on the alarm entity. Sensitive fields (`duress`, `pagerPIN`, `accountNo`, `centralStation`, `pagerNr`) are always hidden. |
-| | Motion/Camera Off Delay | `120` | Seconds to hold motion/camera trigger active. |
-| | Magnet/Wired Closed Delay | `5` | Seconds to hold contact open state. |
-| | Smoke/Fire Off Delay | `120` | Seconds to hold emergency/smoke/gas/flood trigger active. |
+| | Motion/Camera Off Delay | `120` | Seconds to hold motion/camera trigger active before returning to idle. |
+| | Magnet/Wired Closed Delay | `5` | Seconds to hold contact open state if no close event is received. |
+| | Smoke/Fire Off Delay | `120` | Seconds to hold emergency/smoke/gas/flood trigger active before resetting. |
 | | List of Triggers for Siren | `Intruder` | Alarm reasons that mark the siren active (`Intruder`, `Tamper`, `Fire`, `Emergency`, `Gas`, `Flood`, `X10`, `Panic`). |
 | | List of Triggers for HA Notifications | `Connection Problems`, `Siren Sounding` | Persistent HA notifications to raise. |
-| | Attempts to Try to Connect | `1` | Reconnection attempts (`0` = connect once at startup only). |
+| | Attempts to Try to Connect | `1` | Reconnection attempts (`0` = connect once at startup only, no retries). |
 | | Delay Between Attempts | `90` | Seconds between reconnection attempts. |
 | | Arm Without User Code | `No` | Allow arming without entering a user code (panel-dependent). |
-| | Force Use of Numeric Keypad | `No` | Always require entering code on the HA keypad. |
-| | Arm Home / Night Enabled | `Yes` / `Yes` | Enable Arm Home and Arm Night actions. |
-| | Arm Away / Home Instant | `No` / `No` | Use Instant arming (no entry delay). |
+| | Force Use of Numeric Keypad | `No` | Always require entering a PIN on the HA keypad to arm or disarm. |
+| | Arm Home / Night Enabled | `Yes` / `Yes` | Enable Arm Home and Arm Night buttons (Arm Night arms Home Instant). |
+| | Arm Away / Home Instant | `No` / `No` | If enabled, **bypasses the entry delay** (alarm triggers immediately without countdown on entry). Leave `No` to preserve the panel's entry delay countdown. |
 | | Allow Remote Arm / Disarm | `No` / `No` | Permit arming/disarming from Home Assistant. |
 | | Allow Sensor Bypass | `No` | Permit bypassing individual sensors from HA. |
 | | Panel Log XML / CSV Filename | `""` | Relative path **inside `/config`** to export event log XML/CSV (path traversal outside `/config` is blocked). Copy `custom_components/visonic/examples/visonic_template.xml` into `/config/templates/` (or `/config/xml/`, `/config/www/`, `/config/`) to customize XML output. |

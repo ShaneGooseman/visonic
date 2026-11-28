@@ -23,6 +23,10 @@
                 "data": {
                     "type": "Ethernet or USB",
                     "panel_number": "Panel Number (if you only have 1 panel leave this set to 0)"
+                },
+                "data_description": {
+                    "type": "Choose Ethernet for TCP/IP bridges (ESPHome Stream Server, visonic_proxy, USR-WIFI232) or USB for a local serial adapter.",
+                    "panel_number": "Unique identifier per panel (0 for a single panel; 1, 2, ... for additional panels). Used to prefix entity IDs."
                 }
             },
             "myethernet": {
@@ -32,6 +36,11 @@
                     "host": "Host Address",
                     "port": "Port",
 					"esphome_entity_select": "ESPHome Baud Entity (PowerMaster only)"
+                },
+                "data_description": {
+                    "host": "IP address or hostname of the serial-to-Ethernet bridge, ESPHome device, or visonic_proxy.",
+                    "port": "TCP port exposed by the bridge or proxy (commonly 8080, 23, or 8888).",
+                    "esphome_entity_select": "Optional ESPHome select entity (select.*) to switch baud rate between 9600 and 38400 on PowerMaster 10/30 panels. Leave empty if not applicable."
                 }
             },
             "myusb": {
@@ -40,6 +49,10 @@
                 "data": {
                     "path": "USB Local Path",
                     "baud": "Baud Rate"
+                },
+                "data_description": {
+                    "path": "Local serial device path (for example /dev/ttyUSB0 or /dev/serial/by-id/...).",
+                    "baud": "Serial communication speed (9600 for most PowerMax panels, 38400 for PowerMaster)."
                 }
             },
             "reconfigure": {
@@ -51,6 +64,13 @@
                     "esphome_entity_select": "ESPHome Baud Entity (PowerMaster only)",
                     "path": "USB Local Path",
                     "baud": "Baud Rate"
+                },
+                "data_description": {
+                    "host": "IP address or hostname of the serial-to-Ethernet bridge, ESPHome device, or visonic_proxy.",
+                    "port": "TCP port exposed by the bridge or proxy.",
+                    "esphome_entity_select": "Optional ESPHome select entity (select.*) to switch baud rate on PowerMaster 10/30 panels. Leave empty if not used.",
+                    "path": "Local serial device path (for example /dev/ttyUSB0).",
+                    "baud": "Serial communication speed (9600 or 38400)."
                 }
             },
   		    "zeroconf_confirm": {
@@ -58,7 +78,7 @@
 				"title": "Discovered Visonic Panel"
 			},
             "parameters1": {
-                "description": "",
+                "description": "Initial panel discovery and emulation settings.",
                 "title": "Alarm Panel Settings",
                 "data": {
                     "exclude_x10": "X10 Devices to Exclude (comma separated e.g. 2,4,5,6)",
@@ -66,30 +86,49 @@
                     "emulation_mode": "Emulation Mode",
                     "download_code": "EPROM Download Code",
                     "show_eeprom_attributes": "Show the EPROM Data in the Alarm Attributes (if downloaded)"
+                },
+                "data_description": {
+                    "exclude_x10": "Comma-separated list of X10/PGM device numbers to ignore (0 = PGM, 1..15 = X10).",
+                    "exclude_sensor": "Comma-separated list of zone numbers to exclude from Home Assistant (e.g. 2,3).",
+                    "emulation_mode": "Powerlink enables full control and EPROM download; Standard Plus/Standard limit control; Minimal is read-only.",
+                    "download_code": "4-digit installer/EPROM download code. Leave empty to use panel defaults (5650 / AAAA).",
+                    "show_eeprom_attributes": "Exposes non-sensitive EPROM configuration as attributes on the alarm entity (PINs and account numbers remain hidden)."
                 }
             },
             "parameters10": {
-                "description": "",
+                "description": "Configure siren triggers, Home Assistant notifications, and reconnection behavior.",
                 "title": "Alarm Panel Settings",
                 "data": {
                     "siren_sounding": "List of triggers for the siren",
                     "panel_state_notifications": "List of triggers for Home Assistant Notifications",
                     "retry_connection_count": "Try this number of times to attempt a reload",
                     "retry_connection_delay": "Time delay (seconds) between reload attempts"
+                },
+                "data_description": {
+                    "siren_sounding": "Panel alarm conditions that mark the Home Assistant alarm/siren as triggered.",
+                    "panel_state_notifications": "Panel events that will create persistent notifications in Home Assistant.",
+                    "retry_connection_count": "Number of reconnection attempts when the connection drops (0 = connect once at startup with no retries).",
+                    "retry_connection_delay": "Seconds to wait between reconnection attempts."
                 }
             },
             "parameters11": {
-                "description": "",
+                "description": "Configure EPROM attributes and sensor reset delays.",
                 "title": "Alarm Panel Zone/Sensor Settings",
                 "data": {
                     "show_eeprom_attributes": "Show the EPROM Data in the Alarm Attributes",
                     "motion_off_delay": "Motion/Camera off delay time (seconds)",
                     "magnet_closed_delay": "Magnet/Wired closed delay time (seconds)",
                     "emergency_off_delay": "Smoke/Fire off delay time (seconds)"
+                },
+                "data_description": {
+                    "show_eeprom_attributes": "Exposes non-sensitive EPROM configuration as attributes on the alarm entity (PINs and account numbers remain hidden).",
+                    "motion_off_delay": "Seconds a motion or camera PIR sensor stays active (on) after detection before returning to idle.",
+                    "magnet_closed_delay": "Seconds a magnetic or wired contact stays open before resetting if no close event is received.",
+                    "emergency_off_delay": "Seconds a smoke, fire, gas, flood, or emergency alert stays active before resetting."
                 }
             },
             "parameters12": {
-                "description": "",
+                "description": "Configure arming modes, entry delays, keypad requirements, and remote control permissions.",
                 "title": "Alarm Panel Arm/Disarm Settings",
                 "data": {
                     "arm_without_usercode": "Arm without User Code (not supported by all panels)",
@@ -101,10 +140,21 @@
                     "allow_remote_arm": "Allow Panel Arm from Home Assistant",
                     "allow_remote_disarm": "Allow Panel DisArm from Home Assistant",
                     "allow_sensor_bypass": "Allow each sensor to be bypassed"
+                },
+                "data_description": {
+                    "arm_without_usercode": "Attempt to arm without sending a user code (only supported by certain panels).",
+                    "force_numeric_keypad": "Always display the numeric keypad and require entering a PIN in Home Assistant to arm or disarm.",
+                    "arm_home_enabled": "Enable the Arm Home button on the Home Assistant alarm panel.",
+                    "arm_night_enabled": "Enable the Arm Night button on the Home Assistant alarm panel (arms Home Instant).",
+                    "arm_away_instant": "If enabled, Arm Away sends an instant arm command (no entry delay; alarm triggers immediately without countdown). Leave off for normal entry delay.",
+                    "arm_home_instant": "If enabled, Arm Home sends an instant arm command (no entry delay). Leave off for normal entry delay.",
+                    "allow_remote_arm": "Permit arming the alarm panel from Home Assistant.",
+                    "allow_remote_disarm": "Permit disarming the alarm panel from Home Assistant.",
+                    "allow_sensor_bypass": "Allow bypassing individual zones/sensors from Home Assistant."
                 }
             },
             "parameters13": {
-                "description": "",
+                "description": "Configure panel event log download, Home Assistant events, and XML/CSV export.",
                 "title": "Alarm Panel Log File Settings",
                 "data": {
                     "panellog_complete_event": "Generate an HA Event on Completion",
@@ -114,6 +164,15 @@
                     "panellog_csv_filename": "The CSV Filename (and path)",
                     "panellog_reverse_order": "Reverse the output order",
                     "panellog_max_entries": "Only output the most recent X log entries"
+                },
+                "data_description": {
+                    "panellog_complete_event": "Fire a Home Assistant event when the panel event log download completes.",
+                    "panellog_logentry_event": "Fire a Home Assistant event for each downloaded entry in the panel log.",
+                    "panellog_csv_add_title_row": "Include a column header row at the top of the exported CSV file.",
+                    "panellog_xml_filename": "Relative path inside /config for the XML export (paths outside /config are blocked). Leave empty to disable.",
+                    "panellog_csv_filename": "Relative path inside /config for the CSV export (paths outside /config are blocked). Leave empty to disable.",
+                    "panellog_reverse_order": "Write log entries from oldest to newest instead of newest first.",
+                    "panellog_max_entries": "Maximum number of most recent log entries to export."
                 }
             }
         }
@@ -132,27 +191,39 @@
         },
         "step": {
             "parameters10": {
-                "description": "",
+                "description": "Configure siren triggers, Home Assistant notifications, and reconnection behavior.",
                 "title": "Alarm Panel Settings",
                 "data": {
                     "siren_sounding": "List of triggers for the siren",
                     "panel_state_notifications": "List of triggers for Home Assistant Notifications",
                     "retry_connection_count": "Try this number of times to attempt a reload",
                     "retry_connection_delay": "Time delay (seconds) between reload attempts"
+                },
+                "data_description": {
+                    "siren_sounding": "Panel alarm conditions that mark the Home Assistant alarm/siren as triggered.",
+                    "panel_state_notifications": "Panel events that will create persistent notifications in Home Assistant.",
+                    "retry_connection_count": "Number of reconnection attempts when the connection drops (0 = connect once at startup with no retries).",
+                    "retry_connection_delay": "Seconds to wait between reconnection attempts."
                 }
             },
             "parameters11": {
-                "description": "",
+                "description": "Configure EPROM attributes and sensor reset delays.",
                 "title": "Alarm Panel Zone/Sensor Settings",
                 "data": {
                     "show_eeprom_attributes": "Show the EPROM Data in the Alarm Attributes",
                     "motion_off_delay": "Motion/Camera off delay time (seconds)",
                     "magnet_closed_delay": "Magnet/Wired closed delay time (seconds)",
                     "emergency_off_delay": "Smoke/Fire off delay time (seconds)"
+                },
+                "data_description": {
+                    "show_eeprom_attributes": "Exposes non-sensitive EPROM configuration as attributes on the alarm entity (PINs and account numbers remain hidden).",
+                    "motion_off_delay": "Seconds a motion or camera PIR sensor stays active (on) after detection before returning to idle.",
+                    "magnet_closed_delay": "Seconds a magnetic or wired contact stays open before resetting if no close event is received.",
+                    "emergency_off_delay": "Seconds a smoke, fire, gas, flood, or emergency alert stays active before resetting."
                 }
             },
             "parameters12": {
-                "description": "",
+                "description": "Configure arming modes, entry delays, keypad requirements, and remote control permissions.",
                 "title": "Alarm Panel Arm/Disarm Settings",
                 "data": {
                     "arm_without_usercode": "Arm without User Code (not supported by all panels)",
@@ -164,10 +235,21 @@
                     "allow_remote_arm": "Allow Panel Arm from Home Assistant",
                     "allow_remote_disarm": "Allow Panel DisArm from Home Assistant",
                     "allow_sensor_bypass": "Allow each sensor to be bypassed"
+                },
+                "data_description": {
+                    "arm_without_usercode": "Attempt to arm without sending a user code (only supported by certain panels).",
+                    "force_numeric_keypad": "Always display the numeric keypad and require entering a PIN in Home Assistant to arm or disarm.",
+                    "arm_home_enabled": "Enable the Arm Home button on the Home Assistant alarm panel.",
+                    "arm_night_enabled": "Enable the Arm Night button on the Home Assistant alarm panel (arms Home Instant).",
+                    "arm_away_instant": "If enabled, Arm Away sends an instant arm command (no entry delay; alarm triggers immediately without countdown). Leave off for normal entry delay.",
+                    "arm_home_instant": "If enabled, Arm Home sends an instant arm command (no entry delay). Leave off for normal entry delay.",
+                    "allow_remote_arm": "Permit arming the alarm panel from Home Assistant.",
+                    "allow_remote_disarm": "Permit disarming the alarm panel from Home Assistant.",
+                    "allow_sensor_bypass": "Allow bypassing individual zones/sensors from Home Assistant."
                 }
             },
             "parameters13": {
-                "description": "",
+                "description": "Configure panel event log download, Home Assistant events, and XML/CSV export.",
                 "title": "Alarm Panel Log File Settings",
                 "data": {
                     "panellog_complete_event": "Generate an HA Event on Completion",
@@ -177,6 +259,15 @@
                     "panellog_csv_filename": "The CSV Filename (and path)",
                     "panellog_reverse_order": "Reverse the output order",
                     "panellog_max_entries": "Only output the most recent X log entries"
+                },
+                "data_description": {
+                    "panellog_complete_event": "Fire a Home Assistant event when the panel event log download completes.",
+                    "panellog_logentry_event": "Fire a Home Assistant event for each downloaded entry in the panel log.",
+                    "panellog_csv_add_title_row": "Include a column header row at the top of the exported CSV file.",
+                    "panellog_xml_filename": "Relative path inside /config for the XML export (paths outside /config are blocked). Leave empty to disable.",
+                    "panellog_csv_filename": "Relative path inside /config for the CSV export (paths outside /config are blocked). Leave empty to disable.",
+                    "panellog_reverse_order": "Write log entries from oldest to newest instead of newest first.",
+                    "panellog_max_entries": "Maximum number of most recent log entries to export."
                 }
             }
         }

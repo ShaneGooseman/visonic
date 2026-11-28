@@ -599,35 +599,26 @@ class VisonicOptionsFlowHandler(OptionsFlow, MyHandlers):
     # when editing an existing config, start from parameters10 as the previous settings are not editable after the connection has been made
     async def async_step_init(self, user_input=None):
         """Manage the options."""
-
-        #_LOGGER.debug(f"Edit config option settings, user input = {user_input}")
-        #_LOGGER.debug(f"Edit config option settings, data = {self.config_entry.data}")
-        #_LOGGER.debug(f"Edit config option settings, options = {self.config_entry.options}")
-
+        combined = self.combineSettings(self.config_entry)
         self.setConfigEntry(self.config_entry)
         self.config = deepcopy(dict(self.config_entry.options))
 
-        if self.config is not None and CONF_DEVICE_TYPE in self.config:
-            t = self.config[CONF_DEVICE_TYPE].lower()
-            #_LOGGER.debug(f"type = {type(t)}   t = {t}")
-            if t == DEVICE_TYPE_ETHERNET or t == DEVICE_TYPE_USB:
+        device_type = str(combined.get(CONF_DEVICE_TYPE, DEVICE_TYPE_ETHERNET)).lower()
+        if device_type in (DEVICE_TYPE_ETHERNET, DEVICE_TYPE_USB):
+            self.current_pos = -1
 
-                self.current_pos = -1
+            emulation_mode = combined.get(CONF_EMULATION_MODE, available_emulation_modes[0])
+            self.step_sequence = self.create_parameters_sequence(emulation_mode)
+            if len(self.step_sequence) == 0:
+                _LOGGER.debug(
+                    "********************* ERROR : CONF_EMULATION_MODE set to %s **********************************",
+                    emulation_mode,
+                )
+                return self.async_abort(reason=TRANSLATE_ERROR_EMULATION_MODE)
 
-                if CONF_EMULATION_MODE in self.config:
-                    self.step_sequence = self.create_parameters_sequence(self.config[CONF_EMULATION_MODE])
-                    if len(self.step_sequence) == 0:
-                        _LOGGER.debug(f"********************* ERROR : CONF_EMULATION_MODE set to {self.config[CONF_EMULATION_MODE]} **********************************")
-                        return self.async_abort(reason=TRANSLATE_ERROR_EMULATION_MODE)
-                else:
-                    _LOGGER.debug(f"********************* ERROR : CONF_EMULATION_MODE not in self.config **********************************")
-                    return self.async_abort(reason=TRANSLATE_ERROR_EMULATION_MODE)
+            return self.gotonext()
 
-                return self.gotonext()
-
-            else:
-                _LOGGER.debug(f"Edit config option settings type = {t}, aborting")
-        
+        _LOGGER.debug("Edit config option settings type = %s, aborting", device_type)
         return self.async_abort(reason=TRANSLATE_ERROR_DEVICE)
 
         

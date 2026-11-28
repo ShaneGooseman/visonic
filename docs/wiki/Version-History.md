@@ -7,6 +7,18 @@ This fork is versioned independently from the upstream project. The version that
 - Canonical change history: [`CHANGELOG.md`](https://github.com/ShaneGooseman/visonic/blob/master/CHANGELOG.md)
 - All releases: [Releases](https://github.com/ShaneGooseman/visonic/releases)
 
+## `1.0.1` — 2026-11-28
+
+Release: [`v1.0.1`](https://github.com/ShaneGooseman/visonic/releases/tag/v1.0.1)
+
+### Added
+- **UI field descriptions (`data_description`):** explanatory helper text beneath every config and options field in English and Spanish (including how instant arming affects the entry delay countdown).
+- **Unit tests (`tests/test_options_flow.py`):** verifies `OptionsFlow` when `entry.options` is empty and checks `data_description` coverage.
+
+### Fixed
+- **Edit options at any time:** `VisonicOptionsFlowHandler.async_step_init` now merges `entry.data` and `entry.options` when opening **Configure**, preventing the `device_error` abort when no options were saved yet while keeping connection fields isolated for **Reconfigure**.
+- **`update_listener`:** safely guards `entry.runtime_data` access.
+
 ## `1.0.0` — 2026-11-27
 
 First versioned release of the fork, based on `0.12.6.0` by [davesmeghead/visonic](https://github.com/davesmeghead/visonic). The version leaves the four-part numbering inherited from upstream (`0.12.6.0`) and moves to three-part SemVer (`1.0.0`); `PLUGIN_VERSION` keeps tracking the panel protocol version, not the integration version.

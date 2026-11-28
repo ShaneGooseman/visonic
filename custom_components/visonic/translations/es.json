@@ -23,6 +23,10 @@
                 "data": {
                     "type": "Ethernet o USB",
                     "panel_number": "Número de panel (si solo tienes 1 panel, déjalo en 0)"
+                },
+                "data_description": {
+                    "type": "Elige Ethernet para puentes TCP/IP (ESPHome Stream Server, visonic_proxy, USR-WIFI232) o USB para un adaptador serie local.",
+                    "panel_number": "Identificador único por panel (0 si solo tienes un panel; 1, 2, ... para paneles adicionales). Se usa como prefijo en las entidades."
                 }
             },
             "myethernet": {
@@ -32,6 +36,11 @@
                     "host": "Dirección del host",
                     "port": "Puerto",
                     "esphome_entity_select": "Entidad de baudios ESPHome (solo PowerMaster)"
+                },
+                "data_description": {
+                    "host": "Dirección IP o nombre de host del puente serie-Ethernet, dispositivo ESPHome o visonic_proxy.",
+                    "port": "Puerto TCP expuesto por el puente o proxy (habitualmente 8080, 23 u 8888).",
+                    "esphome_entity_select": "Entidad select opcional de ESPHome (select.*) para cambiar la velocidad entre 9600 y 38400 baudios en paneles PowerMaster 10/30. Déjalo vacío si no aplica."
                 }
             },
             "myusb": {
@@ -40,6 +49,10 @@
                 "data": {
                     "path": "Ruta local del dispositivo USB",
                     "baud": "Velocidad en baudios"
+                },
+                "data_description": {
+                    "path": "Ruta del puerto serie local (por ejemplo /dev/ttyUSB0 o /dev/serial/by-id/...).",
+                    "baud": "Velocidad de comunicación serie (9600 en la mayoría de PowerMax, 38400 en PowerMaster)."
                 }
             },
             "reconfigure": {
@@ -51,6 +64,13 @@
                     "esphome_entity_select": "Entidad de baudios ESPHome (solo PowerMaster)",
                     "path": "Ruta local del dispositivo USB",
                     "baud": "Velocidad en baudios"
+                },
+                "data_description": {
+                    "host": "Dirección IP o nombre de host del puente serie-Ethernet, dispositivo ESPHome o visonic_proxy.",
+                    "port": "Puerto TCP expuesto por el puente o proxy.",
+                    "esphome_entity_select": "Entidad select opcional de ESPHome (select.*) para cambiar baudios en PowerMaster 10/30. Déjalo vacío si no se usa.",
+                    "path": "Ruta del puerto serie local (por ejemplo /dev/ttyUSB0).",
+                    "baud": "Velocidad de comunicación serie (9600 o 38400)."
                 }
             },
             "zeroconf_confirm": {
@@ -58,7 +78,7 @@
                 "title": "Panel Visonic descubierto"
             },
             "parameters1": {
-                "description": "",
+                "description": "Ajustes iniciales de emulación y exclusión de dispositivos.",
                 "title": "Ajustes del panel de alarma",
                 "data": {
                     "exclude_x10": "Dispositivos X10 a excluir (separados por comas, ej. 2,4,5,6)",
@@ -66,30 +86,49 @@
                     "emulation_mode": "Modo de emulación",
                     "download_code": "Código de descarga EPROM",
                     "show_eeprom_attributes": "Mostrar datos EPROM en los atributos de la alarma (si se descargan)"
+                },
+                "data_description": {
+                    "exclude_x10": "Lista separada por comas de identificadores X10/PGM a ignorar (0 = PGM, 1..15 = X10).",
+                    "exclude_sensor": "Lista separada por comas de números de zona que no se crearán en Home Assistant (ej. 2,3).",
+                    "emulation_mode": "Powerlink permite control completo y descarga EPROM; Standard Plus/Standard limitan el control; Minimal es solo lectura.",
+                    "download_code": "Código de instalador/descarga EPROM de 4 dígitos. Déjalo vacío para usar los valores por defecto (5650 / AAAA).",
+                    "show_eeprom_attributes": "Muestra ajustes EPROM no sensibles como atributos de la alarma (los PIN y números de cuenta permanecen ocultos)."
                 }
             },
             "parameters10": {
-                "description": "",
+                "description": "Configura los disparadores de sirena, notificaciones en Home Assistant y reintentos de conexión.",
                 "title": "Ajustes del panel de alarma",
                 "data": {
                     "siren_sounding": "Lista de disparadores de la sirena",
                     "panel_state_notifications": "Lista de disparadores para notificaciones de Home Assistant",
                     "retry_connection_count": "Número de intentos de reconexión",
                     "retry_connection_delay": "Tiempo de espera (segundos) entre intentos de reconexión"
+                },
+                "data_description": {
+                    "siren_sounding": "Motivos de alarma del panel que marcan la sirena/alarma como disparada en Home Assistant.",
+                    "panel_state_notifications": "Eventos del panel que generarán notificaciones persistentes en Home Assistant.",
+                    "retry_connection_count": "Número de reintentos si se pierde la conexión (0 = solo intenta conectar al arrancar, sin reintentos).",
+                    "retry_connection_delay": "Segundos de espera entre cada intento de reconexión."
                 }
             },
             "parameters11": {
-                "description": "",
+                "description": "Configura los atributos EPROM y los retardos de restablecimiento de sensores.",
                 "title": "Ajustes de zonas y sensores del panel",
                 "data": {
                     "show_eeprom_attributes": "Mostrar datos EPROM en los atributos de la alarma",
                     "motion_off_delay": "Retardo de desactivación de movimiento/cámara (segundos)",
                     "magnet_closed_delay": "Retardo de cierre de contacto magnético/cableado (segundos)",
                     "emergency_off_delay": "Retardo de desactivación de humo/incendio (segundos)"
+                },
+                "data_description": {
+                    "show_eeprom_attributes": "Muestra ajustes EPROM no sensibles como atributos de la alarma (los PIN y números de cuenta permanecen ocultos).",
+                    "motion_off_delay": "Segundos que un sensor PIR/cámara permanece activo (detectado) antes de volver a reposo.",
+                    "magnet_closed_delay": "Segundos que un contacto magnético o cableado permanece abierto si no se recibe evento de cierre.",
+                    "emergency_off_delay": "Segundos que permanece activa una alerta de humo, incendio, gas, inundación o emergencia antes de restablecerse."
                 }
             },
             "parameters12": {
-                "description": "",
+                "description": "Configura los modos de armado, retardos de entrada, teclado numérico y permisos de control remoto.",
                 "title": "Ajustes de armado y desarmado del panel",
                 "data": {
                     "arm_without_usercode": "Armar sin código de usuario (no compatible con todos los paneles)",
@@ -101,10 +140,21 @@
                     "allow_remote_arm": "Permitir armar el panel desde Home Assistant",
                     "allow_remote_disarm": "Permitir desarmar el panel desde Home Assistant",
                     "allow_sensor_bypass": "Permitir anular (bypass) cada sensor"
+                },
+                "data_description": {
+                    "arm_without_usercode": "Intenta armar sin enviar código de usuario (solo compatible con algunos modelos de panel).",
+                    "force_numeric_keypad": "Muestra siempre el teclado numérico y exige introducir un PIN en Home Assistant para armar o desarmar.",
+                    "arm_home_enabled": "Habilita el botón de Armado en casa en la entidad de alarma de Home Assistant.",
+                    "arm_night_enabled": "Habilita el botón de Armado nocturno en Home Assistant (arma en casa de forma instantánea).",
+                    "arm_away_instant": "Si se activa, Armado ausente envía armado instantáneo (sin retardo de entrada; la alarma salta al instante sin cuenta atrás). Déjalo desactivado para respetar el retardo de entrada.",
+                    "arm_home_instant": "Si se activa, Armado en casa envía armado instantáneo (sin retardo de entrada). Déjalo desactivado para respetar el retardo de entrada.",
+                    "allow_remote_arm": "Autoriza armar el panel de alarma desde Home Assistant.",
+                    "allow_remote_disarm": "Autoriza desarmar el panel de alarma desde Home Assistant.",
+                    "allow_sensor_bypass": "Permite anular (bypass) zonas o sensores individuales desde Home Assistant."
                 }
             },
             "parameters13": {
-                "description": "",
+                "description": "Configura la descarga del historial de eventos del panel, eventos en HA y exportación XML/CSV.",
                 "title": "Ajustes del registro de eventos del panel",
                 "data": {
                     "panellog_complete_event": "Generar un evento en HA al completar la descarga",
@@ -114,6 +164,15 @@
                     "panellog_csv_filename": "Nombre de archivo CSV (y ruta relativa en /config)",
                     "panellog_reverse_order": "Invertir el orden de salida",
                     "panellog_max_entries": "Exportar solo las X entradas más recientes"
+                },
+                "data_description": {
+                    "panellog_complete_event": "Lanza un evento en Home Assistant al finalizar la descarga del registro del panel.",
+                    "panellog_logentry_event": "Lanza un evento en Home Assistant por cada entrada descargada del registro.",
+                    "panellog_csv_add_title_row": "Añade una fila con los nombres de columna al inicio del archivo CSV exportado.",
+                    "panellog_xml_filename": "Ruta relativa dentro de /config para exportar en XML (se bloquean rutas fuera de /config). Déjalo vacío para desactivar.",
+                    "panellog_csv_filename": "Ruta relativa dentro de /config para exportar en CSV (se bloquean rutas fuera de /config). Déjalo vacío para desactivar.",
+                    "panellog_reverse_order": "Escribe las entradas del registro de más antigua a más reciente.",
+                    "panellog_max_entries": "Número máximo de entradas más recientes que se exportarán."
                 }
             }
         }
@@ -132,27 +191,39 @@
         },
         "step": {
             "parameters10": {
-                "description": "",
+                "description": "Configura los disparadores de sirena, notificaciones en Home Assistant y reintentos de conexión.",
                 "title": "Ajustes del panel de alarma",
                 "data": {
                     "siren_sounding": "Lista de disparadores de la sirena",
                     "panel_state_notifications": "Lista de disparadores para notificaciones de Home Assistant",
                     "retry_connection_count": "Número de intentos de reconexión",
                     "retry_connection_delay": "Tiempo de espera (segundos) entre intentos de reconexión"
+                },
+                "data_description": {
+                    "siren_sounding": "Motivos de alarma del panel que marcan la sirena/alarma como disparada en Home Assistant.",
+                    "panel_state_notifications": "Eventos del panel que generarán notificaciones persistentes en Home Assistant.",
+                    "retry_connection_count": "Número de reintentos si se pierde la conexión (0 = solo intenta conectar al arrancar, sin reintentos).",
+                    "retry_connection_delay": "Segundos de espera entre cada intento de reconexión."
                 }
             },
             "parameters11": {
-                "description": "",
+                "description": "Configura los atributos EPROM y los retardos de restablecimiento de sensores.",
                 "title": "Ajustes de zonas y sensores del panel",
                 "data": {
                     "show_eeprom_attributes": "Mostrar datos EPROM en los atributos de la alarma",
                     "motion_off_delay": "Retardo de desactivación de movimiento/cámara (segundos)",
                     "magnet_closed_delay": "Retardo de cierre de contacto magnético/cableado (segundos)",
                     "emergency_off_delay": "Retardo de desactivación de humo/incendio (segundos)"
+                },
+                "data_description": {
+                    "show_eeprom_attributes": "Muestra ajustes EPROM no sensibles como atributos de la alarma (los PIN y números de cuenta permanecen ocultos).",
+                    "motion_off_delay": "Segundos que un sensor PIR/cámara permanece activo (detectado) antes de volver a reposo.",
+                    "magnet_closed_delay": "Segundos que un contacto magnético o cableado permanece abierto si no se recibe evento de cierre.",
+                    "emergency_off_delay": "Segundos que permanece activa una alerta de humo, incendio, gas, inundación o emergencia antes de restablecerse."
                 }
             },
             "parameters12": {
-                "description": "",
+                "description": "Configura los modos de armado, retardos de entrada, teclado numérico y permisos de control remoto.",
                 "title": "Ajustes de armado y desarmado del panel",
                 "data": {
                     "arm_without_usercode": "Armar sin código de usuario (no compatible con todos los paneles)",
@@ -164,10 +235,21 @@
                     "allow_remote_arm": "Permitir armar el panel desde Home Assistant",
                     "allow_remote_disarm": "Permitir desarmar el panel desde Home Assistant",
                     "allow_sensor_bypass": "Permitir anular (bypass) cada sensor"
+                },
+                "data_description": {
+                    "arm_without_usercode": "Intenta armar sin enviar código de usuario (solo compatible con algunos modelos de panel).",
+                    "force_numeric_keypad": "Muestra siempre el teclado numérico y exige introducir un PIN en Home Assistant para armar o desarmar.",
+                    "arm_home_enabled": "Habilita el botón de Armado en casa en la entidad de alarma de Home Assistant.",
+                    "arm_night_enabled": "Habilita el botón de Armado nocturno en Home Assistant (arma en casa de forma instantánea).",
+                    "arm_away_instant": "Si se activa, Armado ausente envía armado instantáneo (sin retardo de entrada; la alarma salta al instante sin cuenta atrás). Déjalo desactivado para respetar el retardo de entrada.",
+                    "arm_home_instant": "Si se activa, Armado en casa envía armado instantáneo (sin retardo de entrada). Déjalo desactivado para respetar el retardo de entrada.",
+                    "allow_remote_arm": "Autoriza armar el panel de alarma desde Home Assistant.",
+                    "allow_remote_disarm": "Autoriza desarmar el panel de alarma desde Home Assistant.",
+                    "allow_sensor_bypass": "Permite anular (bypass) zonas o sensores individuales desde Home Assistant."
                 }
             },
             "parameters13": {
-                "description": "",
+                "description": "Configura la descarga del historial de eventos del panel, eventos en HA y exportación XML/CSV.",
                 "title": "Ajustes del registro de eventos del panel",
                 "data": {
                     "panellog_complete_event": "Generar un evento en HA al completar la descarga",
@@ -177,6 +259,15 @@
                     "panellog_csv_filename": "Nombre de archivo CSV (y ruta relativa en /config)",
                     "panellog_reverse_order": "Invertir el orden de salida",
                     "panellog_max_entries": "Exportar solo las X entradas más recientes"
+                },
+                "data_description": {
+                    "panellog_complete_event": "Lanza un evento en Home Assistant al finalizar la descarga del registro del panel.",
+                    "panellog_logentry_event": "Lanza un evento en Home Assistant por cada entrada descargada del registro.",
+                    "panellog_csv_add_title_row": "Añade una fila con los nombres de columna al inicio del archivo CSV exportado.",
+                    "panellog_xml_filename": "Ruta relativa dentro de /config para exportar en XML (se bloquean rutas fuera de /config). Déjalo vacío para desactivar.",
+                    "panellog_csv_filename": "Ruta relativa dentro de /config para exportar en CSV (se bloquean rutas fuera de /config). Déjalo vacío para desactivar.",
+                    "panellog_reverse_order": "Escribe las entradas del registro de más antigua a más reciente.",
+                    "panellog_max_entries": "Número máximo de entradas más recientes que se exportarán."
                 }
             }
         }

@@ -754,8 +754,8 @@ async def update_listener(hass: HomeAssistant, entry: VisonicConfigEntry):
     """Edit visonic entry."""
 
     _LOGGER.debug("************* update connection data **************")
-    data = entry.runtime_data
-    if data.client is not None:
+    data = getattr(entry, "runtime_data", None)
+    if data is not None and data.client is not None:
         # combine and convert python settings map to dictionary
         conf = await combineSettings(entry)
         # update the client parameter set
