@@ -18,6 +18,8 @@ This is a *custom integration* for [Home Assistant](https://www.home-assistant.i
 
 ## Introduction
 This custom integration allows local control and monitoring of a Visonic alarm system over Ethernet (TCP / ESPHome / `visonic_proxy`) or USB/RS-232. Compatible models:
+
+> **Note on `visonic_proxy`:** This integration is specifically designed to work with [`ShaneGooseman/visonic_proxy`](https://github.com/ShaneGooseman/visonic_proxy) (socket mode on port `5002` or WebSocket mode on port `8082`), although it also works with the original [`msp1974/visonic_proxy`](https://github.com/msp1974/visonic_proxy) from which it is forked.
 - PowerMax+ (plus), PowerMax Express, PowerMax Pro, PowerMax Pro Plus, PowerMax Complete and PowerMax Complete Plus
 - PowerMaster-10, PowerMaster-30 and PowerMaster-33
 - PowerMaster-360 and PowerMaster-360R (limited to Standard Plus mode)
@@ -53,6 +55,8 @@ Esta es una *integración personalizada* para [Home Assistant](https://www.home-
 
 ## Introducción
 Esta integración permite controlar y monitorizar de forma local un sistema de alarma Visonic mediante Ethernet (TCP / ESPHome / `visonic_proxy`) o USB/RS-232. Modelos compatibles:
+
+> **Nota sobre `visonic_proxy`:** Esta integración está específicamente diseñada para trabajar con [`ShaneGooseman/visonic_proxy`](https://github.com/ShaneGooseman/visonic_proxy) (en modo socket `5002` o WebSocket `8082`), aunque también funciona con el [`msp1974/visonic_proxy`](https://github.com/msp1974/visonic_proxy) original del que es fork.
 - PowerMax+ (plus), PowerMax Express, PowerMax Pro, PowerMax Pro Plus, PowerMax Complete y PowerMax Complete Plus
 - PowerMaster-10, PowerMaster-30 y PowerMaster-33
 - PowerMaster-360 y PowerMaster-360R (limitado a modo Standard Plus)

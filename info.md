@@ -14,6 +14,7 @@ Local Home Assistant custom integration for Visonic PowerMax and PowerMaster ala
 - Native zone devices and entities, including diagnostic (`Tamper`, `Battery`) and measurement (`Temperature`, `Illuminance`) sensors
 - X10/PGM switches and PowerMaster Siren/Panic/Fire/Emergency triggers and Camera PIR images
 - Supports Zeroconf auto-discovery, in-place reconfiguration, and English/Spanish/French/Italian/Dutch translations
+- Specifically designed to work with [`ShaneGooseman/visonic_proxy`](https://github.com/ShaneGooseman/visonic_proxy) (socket `5002` or WebSocket `8082`), while remaining compatible with the original [`msp1974/visonic_proxy`](https://github.com/msp1974/visonic_proxy)
 - Documentation: [Wiki Home (EN)](https://github.com/ShaneGooseman/visonic/wiki)
 
 ## Español
@@ -23,6 +24,7 @@ Integración personalizada local de Home Assistant para paneles de alarma Visoni
 - Dispositivos y entidades nativas por zona, incluyendo diagnóstico (`Tamper`, `Batería`) y medición (`Temperatura`, `Iluminancia`)
 - Interruptores X10/PGM, disparo de sirena/pánico/incendio/emergencia e imágenes de cámaras PIR en PowerMaster
 - Compatible con autodescubrimiento Zeroconf, reconfiguración directa e interfaz en español, inglés, francés, italiano y neerlandés
+- Diseñada específicamente para trabajar con [`ShaneGooseman/visonic_proxy`](https://github.com/ShaneGooseman/visonic_proxy) (modo socket `5002` o WebSocket `8082`), siendo también compatible con el [`msp1974/visonic_proxy`](https://github.com/msp1974/visonic_proxy) original
 - Documentación: [Inicio de la Wiki (ES)](https://github.com/ShaneGooseman/visonic/wiki/Home-ES)
 
 [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=visonic)

@@ -29,7 +29,7 @@ Muchos paneles incluyen también un conector de 20 pines **Dual RS-232**; consul
 
 ## ¿Necesito un módulo PowerLink 2/3/3.1?
 - **No** para uso local independiente: esta integración emula PowerLink directamente.
-- **Si ya tienes un PowerLink 3.1** y quieres seguir usando la app móvil de Visonic junto con Home Assistant, puedes ejecutar [`visonic_proxy`](https://github.com/msp1974/visonic_proxy) y conectar esta integración al proxy por Ethernet (autodescubrimiento por Zeroconf o configuración manual en modo `Powerlink (Puenteado)`).
+- **Si ya tienes un PowerLink 3.1** y quieres seguir usando la app móvil Visonic PowerManage junto con Home Assistant, puedes ejecutar [`ShaneGooseman/visonic_proxy`](https://github.com/ShaneGooseman/visonic_proxy) (en modo socket `5002` o WebSocket `8082`) y conectar esta integración al proxy por Ethernet (autodescubrimiento por Zeroconf o configuración manual en modo `Powerlink (Puenteado)`). Esta integración está específicamente diseñada para trabajar con `ShaneGooseman/visonic_proxy`, aunque también funciona con el [`msp1974/visonic_proxy`](https://github.com/msp1974/visonic_proxy) original del que es fork.
 
 ## ¿Necesito el kit adaptador RS-232 de Visonic?
 - Solo si conectas a un puerto serie clásico DB9 de ±12 V.

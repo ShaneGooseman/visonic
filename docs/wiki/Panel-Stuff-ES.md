@@ -27,7 +27,7 @@ El Canal 2 replica el conector PC/IP (el pin 8 `Tx` está unido con 0 Ω al pin 
 
 ### Resumen (Uso junto a PowerLink 3.1)
 - **No** es posible cablear esta integración en paralelo en el conector Dual RS-232 junto a un módulo hardware PowerLink 3.1.
-- Sin embargo, **sí** puedes usar Home Assistant junto a un módulo PowerLink 3.1 utilizando [`visonic_proxy`](https://github.com/msp1974/visonic_proxy) y conectando esta integración en modo **Powerlink (Puenteado)**.
+- Sin embargo, **sí** puedes usar Home Assistant junto a un módulo PowerLink 3.1 utilizando [`ShaneGooseman/visonic_proxy`](https://github.com/ShaneGooseman/visonic_proxy) (en modo socket `5002` o WebSocket `8082`) y conectando esta integración en modo **Powerlink (Puenteado)**. Esta integración está específicamente diseñada para trabajar con `ShaneGooseman/visonic_proxy`, aunque también funciona con el [`msp1974/visonic_proxy`](https://github.com/msp1974/visonic_proxy) original del que es fork.
 - El módulo GSM (Canal 1) sí puede coexistir con esta integración.
 
 ---
